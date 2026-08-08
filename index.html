@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>NSPIRA IT Assets Collector</title>
+<style>
+:root{
+  --bg:#121319; --panel:#1a1c24; --panel-2:#20232c; --panel-3:#262a34; --border:#2c313d; --border-soft:#242833;
+  --text:#eef0f5; --text-dim:#9ba1b0; --text-faint:#6b7180;
+  --amber:#f2ab45; --amber-soft:#f7c274; --amber-dim:#453214; --teal:#3ad9b8; --teal-dim:#0f3b34;
+  --red:#f0716f; --red-dim:#3d1f22;
+  --mono: ui-monospace, "SFMono-Regular", "Roboto Mono", Menlo, monospace;
+  --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --radius: 16px; --radius-sm: 10px;
+  --ease: cubic-bezier(.2,.7,.3,1);
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{ height:100%; }
+body{
+  background:
+    radial-gradient(900px 500px at 50% -120px, rgba(242,171,69,0.07), transparent 60%),
+    var(--bg);
+  color:var(--text); font-family:var(--sans); font-size:15px; letter-spacing:-0.01em;
+  padding-bottom: calc(70px + env(safe-area-inset-bottom,0px));
+  padding-top: env(safe-area-inset-top,0px);
+}
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 18px 14px 18px; border-bottom:1px solid var(--border-soft);
+  position:sticky; top:0; background:rgba(18,19,25,0.88); backdrop-filter:blur(10px); z-index:10;
+}
+.brand{ display:flex; align-items:center; gap:11px; }
+.brand-mark{
+  width:34px; height:34px; border-radius:10px; background:linear-gradient(140deg,#4f8ff0,#1c5fd6 55%,#0d3b96);
+  display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:800; font-size:15px;
+  color:#ffffff; flex-shrink:0; box-shadow:0 3px 10px rgba(28,95,214,0.35);
+}
+.brand-text .t1{ font-weight:800; font-size:15.5px; letter-spacing:-0.01em; }
+.brand-text .t2{ font-size:9.5px; color:var(--text-faint); font-family:var(--mono); letter-spacing:0.08em; margin-top:1px; }
+.sync-badge{ font-family:var(--mono); font-size:10.5px; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--border); padding:5px 10px; border-radius:20px; }
+.sync-badge.offline{ color:var(--red); border-color:#5a2a2a; }
+
+main{ padding: 16px; max-width:560px; margin:0 auto; }
+.view{ display:none; }
+.view.active{ display:block; animation: viewIn .22s var(--ease); }
+@keyframes viewIn{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:translateY(0);} }
+
+.panel{
+  background:linear-gradient(180deg, var(--panel), var(--panel) 60%, var(--panel-2));
+  border:1px solid var(--border); border-radius:var(--radius); padding:18px;
+  margin-bottom:14px; box-shadow:0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 20px -14px rgba(0,0,0,0.5);
+}
+.section-title{
+  font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-faint);
+  font-weight:800; margin-bottom:12px; display:flex; align-items:center; gap:7px;
+}
+.section-title::before{ content:''; width:5px; height:5px; border-radius:50%; background:var(--amber); flex-shrink:0; }
+
+label{ display:block; font-size:11.5px; color:var(--text-dim); font-weight:700; margin:13px 0 6px 0; letter-spacing:0.01em; }
+label:first-child{ margin-top:0; }
+input, select, textarea{
+  width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+  padding:11px 13px; border-radius:var(--radius-sm); font-size:15px; font-family:var(--sans); outline:none;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+input:focus, select:focus, textarea:focus{ border-color:var(--amber); box-shadow:0 0 0 3px rgba(242,171,69,0.14); }
+textarea{ min-height:60px; resize:vertical; }
+.row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.hint{ font-size:11px; color:var(--text-faint); margin-top:6px; line-height:1.5; }
+
+.btn{
+  width:100%; background:var(--panel-3); border:1px solid var(--border); color:var(--text);
+  padding:13px; border-radius:var(--radius-sm); font-size:15px; font-weight:700; cursor:pointer; margin-top:14px;
+  transition: transform .1s var(--ease), border-color .15s var(--ease), background .15s var(--ease);
+}
+.btn:active{ transform:scale(0.98); }
+.btn.primary{
+  background:linear-gradient(180deg, var(--amber-soft), var(--amber)); color:#241800; border-color:transparent;
+  box-shadow:0 6px 16px -6px rgba(242,171,69,0.45);
+}
+.btn.ghost{ background:transparent; }
+.btn.danger{ border-color:#5a2a2a; color:var(--red); }
+.btn.small{ width:auto; padding:8px 14px; font-size:12.5px; margin-top:0; }
+.btn-row{ display:flex; gap:10px; margin-top:14px; }
+.btn-row .btn{ margin-top:0; width:auto; }
+.btn-row .btn.ghost{ flex:0 0 auto; padding:13px 20px; border-color:var(--border); }
+.btn-row .btn.primary{ flex:1; }
+
+.entry-card{
+  background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:14px 15px; margin-bottom:10px; transition: border-color .15s var(--ease);
+}
+.branch-group{ margin-bottom:16px; }
+.branch-group-head{
+  display:flex; align-items:center; gap:9px; cursor:pointer; user-select:none;
+  padding:11px 13px; background:var(--panel); border:1px solid var(--border);
+  border-radius:var(--radius-sm); margin-bottom:10px; transition: border-color .15s var(--ease);
+}
+.branch-group-head:active{ border-color:var(--amber); }
+.branch-group-head .chev{ color:var(--amber); font-size:11px; width:10px; flex-shrink:0; }
+.branch-group-count{ margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--text-faint); white-space:nowrap; }
+.branch-group-body{ padding-left:4px; }
+.entry-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.entry-name{ font-weight:700; font-size:14.5px; }
+.entry-meta{ font-size:12px; color:var(--text-dim); margin-top:3px; line-height:1.5; }
+.entry-tag{
+  font-family:var(--mono); font-size:9.5px; color:var(--amber); background:var(--amber-dim);
+  border:1px solid rgba(242,171,69,0.18); padding:2.5px 7px; border-radius:5px; display:inline-block; margin-bottom:5px;
+}
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:3.5px 9px; border-radius:20px; font-size:10.5px; font-weight:700; white-space:nowrap; flex-shrink:0; }
+.pill.working{ background:var(--teal-dim); color:var(--teal); }
+.pill.bad{ background:var(--red-dim); color:var(--red); }
+.pill .d{ width:5px; height:5px; border-radius:50%; background:currentColor; }
+.entry-actions{ display:flex; gap:8px; margin-top:11px; }
+.icon-btn{
+  background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:6px 12px;
+  border-radius:var(--radius-sm); font-size:12px; cursor:pointer; transition: border-color .15s var(--ease);
+}
+.icon-btn.danger{ color:var(--red); border-color:#5a2a2a; }
+.icon-btn.danger:active{ background:var(--red-dim); }
+
+.search-row{ display:flex; gap:8px; margin-bottom:12px; }
+.search-row input{ flex:1; }
+
+.empty{ text-align:center; padding:44px 14px; color:var(--text-faint); font-size:13.5px; }
+.empty .big{ font-size:15px; color:var(--text-dim); margin-bottom:6px; font-weight:600; }
+
+.kpi-row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; margin-bottom:14px; }
+.kpi{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:11px 12px; position:relative; overflow:hidden;
+}
+.kpi::before{ content:''; position:absolute; top:0; left:0; width:100%; height:2.5px; background:var(--kpi-accent, var(--amber)); }
+.kpi .lbl{ font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.06em; font-weight:700; }
+.kpi .val{ font-family:var(--mono); font-size:19px; font-weight:700; margin-top:4px; }
+
+.field-with-btn{ display:flex; gap:8px; }
+.accessory-row{ display:flex; gap:10px; }
+.accessory-item{ flex:1; display:flex; flex-direction:column; gap:7px; }
+.accessory-check{
+  display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+  background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 12px;
+  font-size:14px; color:var(--text); transition: border-color .15s var(--ease), background .15s var(--ease);
+}
+.accessory-check input{ width:18px; height:18px; accent-color:var(--amber); flex-shrink:0; }
+.accessory-check:has(input:checked){ border-color:var(--amber); background:var(--amber-dim); }
+.accessory-qty{ text-align:center; }
+
+.field-with-btn input{ flex:1; }
+.scan-btn{
+  flex-shrink:0; width:46px; height:46px; display:flex; align-items:center; justify-content:center;
+  background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:19px; cursor:pointer;
+  transition: border-color .15s var(--ease);
+}
+.scan-btn:active{ border-color:var(--amber); }
+
+.scanner-overlay{
+  display:none; position:fixed; inset:0; background:rgba(6,7,10,0.92); z-index:150;
+  align-items:center; justify-content:center; padding:16px;
+}
+.scanner-overlay.active{ display:flex; }
+.scanner-box{
+  width:100%; max-width:420px; background:var(--panel); border:1px solid var(--border);
+  border-radius:20px; overflow:hidden; box-shadow:0 20px 60px -20px rgba(0,0,0,0.6);
+}
+.scanner-head{ display:flex; align-items:center; justify-content:space-between; padding:15px 16px 0 16px; }
+.scanner-title{ font-size:15px; font-weight:700; }
+.modal-close{ background:transparent; border:none; color:var(--text-faint); font-size:20px; cursor:pointer; padding:2px 6px; }
+.modal-close:active{ color:var(--text); }
+.scanner-video-wrap{ position:relative; background:#000; aspect-ratio:3/4; margin-top:12px; overflow:hidden; }
+.scanner-video-wrap video{ width:100%; height:100%; object-fit:cover; }
+.scanner-frame{
+  position:absolute; inset:16% 10%; border:3px solid var(--amber); border-radius:16px;
+  box-shadow:0 0 0 2000px rgba(0,0,0,0.35); pointer-events:none;
+}
+.scanner-laser{
+  position:absolute; left:11%; right:11%; top:18%; height:2px; z-index:2;
+  background:linear-gradient(90deg, transparent, #ff3b3b 15%, #ff3b3b 85%, transparent);
+  box-shadow:0 0 6px 2px rgba(255,59,59,0.75), 0 0 14px 4px rgba(255,59,59,0.35);
+  pointer-events:none;
+  animation: scannerLaserMove 3.2s ease-in-out infinite;
+}
+@keyframes scannerLaserMove{
+  0%   { top:18%; opacity:0.9; }
+  8%   { opacity:0.9; }
+  50%  { top:82%; opacity:0.9; }
+  92%  { opacity:0.9; }
+  100% { top:18%; opacity:0.9; }
+}
+
+.kit-overlay{
+  display:none; position:fixed; inset:0; background:rgba(6,7,10,0.92); z-index:150;
+  align-items:flex-end; justify-content:center; padding:0;
+}
+.kit-overlay.active{ display:flex; }
+.kit-box{
+  width:100%; max-width:480px; max-height:92vh; background:var(--panel); border:1px solid var(--border);
+  border-radius:20px 20px 0 0; overflow:hidden; box-shadow:0 -10px 40px -10px rgba(0,0,0,0.6);
+  display:flex; flex-direction:column;
+}
+.kit-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--border-soft); flex-shrink:0; }
+.kit-body{ padding:16px 18px 22px 18px; overflow-y:auto; }
+
+.kit-item{
+  background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:13px 14px; margin-bottom:10px;
+}
+.kit-item-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.kit-item-check{ width:19px; height:19px; accent-color:var(--amber); flex-shrink:0; cursor:pointer; }
+.kit-item-name{ font-weight:700; font-size:14.5px; flex:1; }
+.kit-item-cat{ font-family:var(--mono); font-size:9.5px; color:var(--text-faint); }
+.kit-item-fields{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.kit-item-fields input{ font-size:13px; padding:9px 10px; }
+.kit-item-fields label{ font-size:10px; margin:0 0 4px 0; }
+
+.toast{
+  position:fixed; left:16px; right:16px; bottom: calc(78px + env(safe-area-inset-bottom,0px));
+  background:var(--teal); color:#07231d; padding:12px 16px; border-radius:var(--radius-sm);
+  font-size:13.5px; font-weight:700; text-align:center; z-index:200;
+  opacity:0; transform:translateY(10px); transition: all .25s var(--ease); pointer-events:none;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,0.5);
+}
+.toast.show{ opacity:1; transform:translateY(0); }
+
+nav.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:rgba(26,28,36,0.92); backdrop-filter:blur(10px); border-top:1px solid var(--border-soft);
+  display:flex; padding:7px 6px calc(7px + env(safe-area-inset-bottom,0px)) 6px; gap:4px;
+}
+.tab-item{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  color:var(--text-faint); font-size:10.5px; font-weight:700; padding:7px 4px; border-radius:12px;
+  transition: color .15s var(--ease), background .15s var(--ease);
+}
+.tab-item .ic{ font-size:18px; }
+.tab-item.active{ color:var(--amber); background:var(--amber-dim); }
+
+.install-banner{
+  display:none; background:var(--amber-dim); border:1px solid rgba(242,171,69,0.22); color:var(--amber-soft);
+  border-radius:var(--radius-sm); padding:13px 14px; margin-bottom:14px; font-size:12.5px; line-height:1.5;
+}
+.install-banner.show{ display:block; }
+.install-banner button{ margin-top:8px; }
+
+.geo-badge{
+  display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-faint);
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:9px 12px; margin-bottom:14px;
+}
+.geo-badge.ok{ color:var(--teal); border-color:#1c5c50; background:var(--teal-dim); }
+.geo-badge.warn{ color:var(--red); border-color:#5a2a2a; background:var(--red-dim); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">N</div>
+    <div class="brand-text">
+      <div class="t1">NSPIRA IT Assets Collector</div>
+      <div class="t2">FIELD DATA ENTRY</div>
+    </div>
+  </div>
+  <div class="sync-badge" id="syncBadge">— entries</div>
+</header>
+
+<main>
+
+  <!-- ADD -->
+  <div class="view active" id="view-add">
+    <div class="install-banner" id="installBanner">
+      Install this on your home screen for the full app experience — works offline too.
+      <div><button class="btn small primary" id="installBtn">Install app</button></div>
+    </div>
+
+    <div class="geo-badge" id="geoBadge">📍 Getting location…</div>
+
+    <div class="panel" id="roleKitPanel">
+      <div class="section-title">Quick fill — role kit</div>
+      <p style="font-size:12.5px;color:var(--text-dim);line-height:1.6;margin-bottom:12px;">
+        For a user's full set of equipment (e.g. Accountant, Operator, Principal) — pick the role and it lists every item that role gets. Fill in model/serial per item and save them all together.
+      </p>
+      <button type="button" class="btn primary" id="openRoleKitBtn" style="margin-top:0;">⚡ Quick fill by role</button>
+    </div>
+
+    <div class="panel" id="editBanner" style="display:none; border-color:var(--amber);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div>
+          <div class="section-title" style="margin-bottom:2px;">Editing an existing entry</div>
+          <div style="font-size:12px;color:var(--text-dim);">Change what's needed below, then Update — or cancel to leave it unchanged.</div>
+        </div>
+        <button type="button" class="btn ghost small" id="cancelEditBtn">Cancel</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">New asset entry</div>
+
+      <label>Branch *</label>
+      <input type="text" id="fBranch" list="branchList" placeholder="e.g. AP-KRI-VIJ-NELITE-NSPIRA-C-5182">
+      <datalist id="branchList"></datalist>
+
+      <div class="row2">
+        <div>
+          <label>Floor</label>
+          <input type="text" id="fFloor" list="floorList" placeholder="e.g. 2nd Floor" autocomplete="off">
+          <datalist id="floorList"></datalist>
+        </div>
+        <div>
+          <label>Room / Area</label>
+          <input type="text" id="fRoom" placeholder="e.g. Staff Room">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label>Category *</label>
+          <select id="fCategory">
+            <option value="">Select…</option>
+          </select>
+        </div>
+        <div>
+          <label>Asset name *</label>
+          <input type="text" id="fName" list="nameList" placeholder="e.g. IP Dome Camera 2MP" autocomplete="off">
+          <datalist id="nameList"></datalist>
+        </div>
+      </div>
+
+      <div class="row2" id="makeModelRow">
+        <div id="makeFieldGroup">
+          <label>Make</label>
+          <input type="text" id="fMake" list="makeSuggestList" placeholder="e.g. Dahua">
+          <datalist id="makeSuggestList"></datalist>
+        </div>
+        <div>
+          <label>Model</label>
+          <input type="text" id="fModel" list="modelSuggestList" placeholder="—">
+          <datalist id="modelSuggestList"></datalist>
+        </div>
+      </div>
+
+      <div id="ncBatchGroup" style="display:none;">
+        <label>Batch</label>
+        <select id="fNcBatch">
+          <option value="">Select…</option>
+          <option value="BEFORE 2015">BEFORE 2015</option>
+          <option value="AFTER 2015">AFTER 2015</option>
+        </select>
+      </div>
+
+      <div class="row2" id="serialQtyRow">
+        <div id="serialFieldGroup">
+          <label>Serial No</label>
+          <div class="field-with-btn">
+            <input type="text" id="fSerial" placeholder="—">
+            <button type="button" class="scan-btn" id="scanBarcodeBtn" title="Scan barcode / QR code">▦</button>
+          </div>
+        </div>
+        <div>
+          <label>Quantity</label>
+          <input type="number" id="fQty" value="1" min="1">
+        </div>
+      </div>
+
+      <div id="batchSerialsGroup" style="display:none;">
+        <label>Serial Numbers <span style="font-weight:400;color:var(--text-faint);">(optional — for a batch of units)</span></label>
+        <textarea id="fSerialsBatch" placeholder="Paste individual serials — one per line or comma-separated — to create one entry per serial instead of a single combined-quantity entry. Leave blank to just use Quantity above." style="min-height:44px;"></textarea>
+        <button type="button" class="btn ghost small" id="scanBatchBtn" style="margin-top:8px;">▦ Scan to add serial</button>
+      </div>
+
+      <div id="laptopSection" style="display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
+        <div class="section-title" style="color:var(--amber);">Laptop Assignment</div>
+        <div class="row2">
+          <div>
+            <label>Global ID</label>
+            <input type="text" id="fGlobalId" placeholder="e.g. GID-10234">
+          </div>
+          <div>
+            <label>Employee Name</label>
+            <input type="text" id="fEmpName" placeholder="e.g. Ramesh Kumar">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Employee Phone</label>
+            <input type="tel" id="fEmpPhone" placeholder="e.g. 9876543210">
+          </div>
+          <div></div>
+        </div>
+      </div>
+
+      <div id="systemConfigSection" style="display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
+        <div class="section-title" style="color:var(--amber);">Hardware Configuration</div>
+        <div class="row2">
+          <div>
+            <label>Processor</label>
+            <input type="text" id="fProcessor" placeholder="e.g. Intel i3 10th Gen">
+          </div>
+          <div>
+            <label>RAM (GB)</label>
+            <input type="number" id="fRam" placeholder="e.g. 8" min="0">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Storage (GB)</label>
+            <input type="number" id="fStorage" placeholder="e.g. 256" min="0">
+          </div>
+          <div>
+            <label>Storage Type</label>
+            <select id="fStorageType">
+              <option value="">Select…</option>
+              <option>HDD</option>
+              <option>SSD</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="accessoriesSection" style="display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
+        <div class="section-title" style="color:var(--amber);">Included Accessories</div>
+        <div class="accessory-row">
+          <div class="accessory-item">
+            <label class="accessory-check">
+              <input type="checkbox" id="fHasKeyboard" onchange="toggleAccessoryQty('Keyboard')">
+              <span>⌨️ Keyboard</span>
+            </label>
+            <input type="number" id="fKeyboardQty" class="accessory-qty" value="1" min="1" placeholder="Qty" style="display:none;">
+          </div>
+          <div class="accessory-item">
+            <label class="accessory-check">
+              <input type="checkbox" id="fHasMouse" onchange="toggleAccessoryQty('Mouse')">
+              <span>🖱️ Mouse</span>
+            </label>
+            <input type="number" id="fMouseQty" class="accessory-qty" value="1" min="1" placeholder="Qty" style="display:none;">
+          </div>
+        </div>
+      </div>
+
+      <div id="nvrStorageSection" style="display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
+        <div class="section-title" style="color:var(--amber);">Storage Configuration</div>
+        <div class="row2">
+          <div>
+            <label>Storage Capacity</label>
+            <select id="fNvrStorage" onchange="toggleNvrStorageOther()">
+              <option value="">Select…</option>
+              <option>1TB</option>
+              <option>2TB</option>
+              <option>4TB</option>
+              <option>8TB</option>
+              <option>16TB</option>
+              <option value="__OTHER__">Other…</option>
+            </select>
+          </div>
+          <div id="nvrStorageOtherGroup" style="display:none;">
+            <label>Specify capacity</label>
+            <input type="text" id="fNvrStorageOther" placeholder="e.g. 6TB">
+          </div>
+        </div>
+      </div>
+
+      <label>Status</label>
+      <select id="fStatus"></select>
+
+      <label>Remarks</label>
+      <textarea id="fRemarks" placeholder="optional"></textarea>
+
+      <div class="btn-row">
+        <button class="btn ghost" id="clearBtnForm">Clear</button>
+        <button class="btn primary" id="saveBtn">Save entry</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-faint);text-align:center;margin-top:10px;">Saved on this device — works fully offline</div>
+    </div>
+  </div>
+
+  <!-- ENTRIES -->
+  <div class="view" id="view-entries">
+    <div class="kpi-row" id="kpiRow"></div>
+    <div class="search-row">
+      <input type="text" id="searchBox" placeholder="Search branch, room, name, serial…">
+    </div>
+    <div id="entriesList"></div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="view" id="view-export">
+    <div class="panel">
+      <div class="section-title">Export collected data</div>
+      <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">
+        Exports entries on this device as a CSV in the exact column format ASSETLINE expects
+        (Branch, Floor, Room / Area, Asset Category, Asset Name, Make, Model, Serial No, Quantity, Status, Remarks, Global ID, Employee Name, Employee Phone, Processor, RAM (GB), Storage (GB), Storage Type, Keyboard Qty, Mouse Qty, NVR/DVR Storage, GPS Location).
+        Share the file over WhatsApp / email / Drive, or upload it straight into the ASSETLINE web app's
+        Import / Merge tab.
+      </p>
+      <label>Branch</label>
+      <select id="exportBranchFilter">
+        <option value="">All branches</option>
+      </select>
+      <button class="btn primary" id="exportBtn">↓ Export CSV (<span id="exportCount">0</span> entries)</button>
+    </div>
+    <div class="panel">
+      <div class="section-title">Danger zone</div>
+      <p style="font-size:12.5px;color:var(--text-dim);">Clears every entry saved on this device. Export first if you need a copy.</p>
+      <button class="btn danger" id="clearBtn">Clear all entries</button>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="scanner-overlay" id="barcodeModal">
+  <div class="scanner-box">
+    <div class="scanner-head">
+      <div class="scanner-title" id="scannerTitleText">Scan Serial Number</div>
+      <button class="modal-close" id="closeBarcodeModal">✕</button>
+    </div>
+    <div class="scanner-video-wrap">
+      <video id="barcodeVideo" autoplay playsinline muted></video>
+      <div class="scanner-frame"></div>
+      <div class="scanner-laser"></div>
+    </div>
+    <div class="hint" id="barcodeStatus" style="padding:12px 16px; margin-top:0;">Position the barcode or QR code within the frame…</div>
+  </div>
+</div>
+
+<div class="kit-overlay" id="roleKitModal">
+  <div class="kit-box">
+    <div class="kit-head">
+      <div class="scanner-title">Quick Fill — Role Kit</div>
+      <button class="modal-close" id="closeRoleKitModal">✕</button>
+    </div>
+    <div class="kit-body">
+      <label>Role *</label>
+      <select id="kitRole">
+        <option value="">Select a role…</option>
+        <option>Accountant</option>
+        <option>Operator</option>
+        <option>Principal</option>
+        <option>Computer Lab</option>
+      </select>
+
+      <label>Branch *</label>
+      <input type="text" id="kitBranch" list="branchList" placeholder="e.g. AP-KRI-VIJ-NELITE-NSPIRA-C-5182">
+      <div class="row2">
+        <div>
+          <label>Floor</label>
+          <input type="text" id="kitFloor" list="floorList" placeholder="e.g. 2nd Floor">
+        </div>
+        <div>
+          <label>Room / Area</label>
+          <input type="text" id="kitRoom" placeholder="e.g. Principal Room">
+        </div>
+      </div>
+      <label>Assigned To <span style="font-weight:400;color:var(--text-faint);">(optional)</span></label>
+      <input type="text" id="kitEmpName" placeholder="e.g. staff member's name">
+
+      <div id="kitItemsList" style="margin-top:16px;"></div>
+      <datalist id="kitMonitorSizeList">
+        <option value="14 Inch">
+        <option value="18.5 Inch">
+        <option value="19.5 Inch">
+      </datalist>
+      <datalist id="kitPrinterModelList">
+        <option value="LaserJet Pro MFP M329dw">
+        <option value="LaserJet Pro MFP M128fn">
+        <option value="LaserJet 1020 Plus">
+        <option value="LBP2900B">
+      </datalist>
+      <datalist id="kitSystemMakeList">
+        <option value="HP">
+        <option value="Dell">
+        <option value="Lenovo">
+        <option value="Acer">
+        <option value="Assembled PC">
+      </datalist>
+      <datalist id="kitPrinterMakeList">
+        <option value="HP">
+        <option value="Canon">
+      </datalist>
+      <datalist id="kitScannerMakeList">
+        <option value="HP">
+        <option value="Canon">
+        <option value="Epson">
+      </datalist>
+      <datalist id="kitRamList">
+        <option value="2GB">
+        <option value="4GB">
+        <option value="8GB">
+        <option value="16GB">
+      </datalist>
+      <datalist id="kitStorageList">
+        <option value="256">
+        <option value="480">
+        <option value="500">
+        <option value="512">
+        <option value="1TB">
+      </datalist>
+
+      <div class="hint" id="kitStatus" style="display:none; text-align:center;"></div>
+      <button class="btn primary" id="saveKitBtn">Save this kit to Entries</button>
+    </div>
+  </div>
+</div>
+
+<nav class="tabbar">
+  <div class="tab-item active" data-view="add"><span class="ic">＋</span>Add</div>
+  <div class="tab-item" data-view="entries"><span class="ic">▤</span>Entries</div>
+  <div class="tab-item" data-view="export"><span class="ic">↓</span>Export</div>
+</nav>
+
+<script>
+/* ===== Data layer (localStorage — fully offline, this device only) ===== */
+const STORE_KEY = 'assetline-collector-entries';
+let ENTRIES = [];
+let editingEntryId = null; // set while editing an existing entry from the Entries tab
+
+function loadEntries(){
+  try{
+    ENTRIES = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+  }catch(e){ ENTRIES = []; }
+}
+function saveEntries(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(ENTRIES));
+}
+
+const CATEGORIES = ["CCTV Camera","NVR","DVR","DVR SMPS","Network Switch","POE Switch","Router","Access Point","Rack",
+  "System","Laptop","VCloudPoint/NComputing","Monitor","Printer","Xerox Machine","Scanner","Biometric","Projector","TV Display","Audio",
+  "Server","Interactive Panel","Other"];
+
+const STATUSES = ["Working","Not Working","Under Repair","Sent to Vendor","Awaiting Spare",
+  "Replaced","Pending Installation","Installed","Damaged","Missing","Scrap","In Warehouse"];
+
+/* Known asset catalog per category — powers the Asset Name suggestion list
+   and auto-fills Make + Model when a listed item is picked. Extend this
+   object with more categories/items any time; keys must match CATEGORIES. */
+const CATALOG = {
+  "CCTV Camera": [
+    { name: "Hikvision 2MP Dome Camera",   make: "Hikvision", model: "Dome" },
+    { name: "Hikvision 2MP Bullet Camera", make: "Hikvision", model: "Bullet" },
+    { name: "Prama 2MP Dome Camera",       make: "Prama",     model: "Dome" },
+    { name: "Prama 2MP Bullet Camera",     make: "Prama",     model: "Bullet" },
+    { name: "Dahua 2MP Dome Camera",       make: "Dahua",     model: "Dome" },
+    { name: "Dahua 2MP Bullet Camera",     make: "Dahua",     model: "Bullet" }
+  ],
+  "NVR": [
+    { name: "Hikvision 32CH NVR", make: "Hikvision", model: "32CH NVR" },
+    { name: "Hikvision 16CH NVR", make: "Hikvision", model: "16CH NVR" },
+    { name: "Hikvision 8CH NVR",  make: "Hikvision", model: "8CH NVR" },
+    { name: "Prama 32CH NVR",     make: "Prama",     model: "32CH NVR" },
+    { name: "Prama 16CH NVR",     make: "Prama",     model: "16CH NVR" },
+    { name: "Prama 8CH NVR",      make: "Prama",     model: "8CH NVR" }
+  ],
+  "DVR": [
+    { name: "Hikvision 32CH DVR", make: "Hikvision", model: "32CH DVR" },
+    { name: "Hikvision 16CH DVR", make: "Hikvision", model: "16CH DVR" },
+    { name: "Hikvision 8CH DVR",  make: "Hikvision", model: "8CH DVR" }
+  ],
+  "VCloudPoint/NComputing": [
+    { name: "VCLOUD",     make: "-", model: "V1" },
+    { name: "NCOMPUTING", make: "-", model: "L300" }
+  ],
+  "Audio": [
+    { name: "Amplifier", make: "", model: "" },
+    { name: "Speaker",   make: "", model: "" },
+    { name: "Mic",       make: "", model: "" }
+  ],
+  "Network Switch": [
+    { name: "8 Port",  make: "-", model: "8 Port" },
+    { name: "16 Port", make: "-", model: "16 Port" },
+    { name: "24 Port", make: "-", model: "24 Port" }
+  ],
+  "POE Switch": [
+    { name: "8 Port",  make: "-", model: "8 Port" },
+    { name: "16 Port", make: "-", model: "16 Port" },
+    { name: "24 Port", make: "-", model: "24 Port" }
+  ],
+  "Rack": [
+    { name: "2U",  make: "-", model: "2U" },
+    { name: "4U",  make: "-", model: "4U" },
+    { name: "6U",  make: "-", model: "6U" },
+    { name: "9U",  make: "-", model: "9U" },
+    { name: "12U", make: "-", model: "12U" }
+  ],
+  "Printer": [
+    { name: "HP LaserJet Pro MFP M329dw", make: "HP",    model: "LaserJet Pro MFP M329dw" },
+    { name: "HP LaserJet Pro MFP M128fn", make: "HP",    model: "LaserJet Pro MFP M128fn" },
+    { name: "HP LaserJet 1020 Plus",      make: "HP",    model: "LaserJet 1020 Plus" },
+    { name: "Canon Laser Shot LBP2900B",  make: "Canon", model: "LBP2900B" }
+  ]
+};
+
+/* Fixed equipment sets per staff role — powers the "Quick fill by role" kit.
+   Each item maps to a real category already in CATEGORIES. accessories:true
+   means the Keyboard/Mouse checkboxes on that item default to checked. */
+const ROLE_KITS = {
+  "Accountant": [
+    { category: "System",  label: "System",  accessories: true },
+    { category: "Monitor", label: "Monitor" },
+    { category: "Printer", label: "Printer" },
+    { category: "Scanner", label: "Scanner" },
+    { category: "Other",   label: "Others",  freeform: true }
+  ],
+  "Operator": [
+    { category: "System",  label: "System",  accessories: true },
+    { category: "Monitor", label: "Monitor" },
+    { category: "Printer", label: "Printer" },
+    { category: "Scanner", label: "OMR Scanner", nameOverride: "OMR Scanner" },
+    { category: "Other",   label: "Others",  freeform: true }
+  ],
+  "Principal": [
+    { category: "System",     label: "System",    accessories: true },
+    { category: "Monitor",    label: "Monitor" },
+    { category: "Projector",  label: "Projector" },
+    { category: "Audio",      label: "Amplifier",  nameOverride: "Amplifier" },
+    { category: "Audio",      label: "Speakers",   nameOverride: "Speakers" },
+    { category: "Printer",    label: "Printer" },
+    { category: "TV Display", label: "TV" },
+    { category: "Other",      label: "Others",   freeform: true }
+  ]
+};
+
+function openRoleKitModal(){
+  document.getElementById('roleKitModal').classList.add('active');
+  document.getElementById('kitRole').value = '';
+  document.getElementById('kitBranch').value = document.getElementById('fBranch').value || '';
+  document.getElementById('kitFloor').value = document.getElementById('fFloor').value || '';
+  document.getElementById('kitRoom').value = document.getElementById('fRoom').value || '';
+  document.getElementById('kitEmpName').value = '';
+  document.getElementById('kitItemsList').innerHTML = '';
+  document.getElementById('kitStatus').style.display = 'none';
+}
+
+function closeRoleKitModal(){
+  document.getElementById('roleKitModal').classList.remove('active');
+}
+
+// Presets that appear as Model suggestions for specific kit item categories
+const KIT_MONITOR_SIZES = ["14 Inch", "18.5 Inch", "19.5 Inch"];
+const KIT_PRINTER_MODELS = ["LaserJet Pro MFP M329dw", "LaserJet Pro MFP M128fn", "LaserJet 1020 Plus", "LBP2900B"];
+
+function renderKitItems(role){
+  const items = ROLE_KITS[role] || [];
+  document.getElementById('kitItemsList').innerHTML = items.map((item, idx)=>{
+    if(item.freeform){
+      return `
+      <div class="kit-item" data-idx="${idx}">
+        <div class="kit-item-head">
+          <input type="checkbox" class="kit-item-check">
+          <div>
+            <div class="kit-item-name">Others</div>
+            <div class="kit-item-cat">Anything not already listed above</div>
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Qty</label>
+            <input type="number" class="kit-item-qty" value="1" min="1">
+          </div>
+          <div>
+            <label>Name</label>
+            <input type="text" class="kit-item-freename" placeholder="e.g. UPS, extension board">
+          </div>
+        </div>
+      </div>`;
+    }
+
+    const displayName = item.nameOverride || item.label;
+    const isSystem = item.category === 'System';
+    const modelListId = item.category === 'Monitor' ? 'kitMonitorSizeList'
+                       : item.category === 'Printer' ? 'kitPrinterModelList'
+                       : '';
+    const modelPlaceholder = item.category === 'Monitor' ? 'e.g. 18.5 Inch'
+                            : item.category === 'Printer' ? 'e.g. LaserJet Pro MFP M329dw'
+                            : 'optional';
+    const makeListId = item.category === 'System' ? 'kitSystemMakeList'
+                      : item.category === 'Printer' ? 'kitPrinterMakeList'
+                      : item.category === 'Scanner' ? 'kitScannerMakeList'
+                      : '';
+    const makePlaceholder = item.category === 'System' ? 'e.g. HP, Dell'
+                           : item.category === 'Printer' ? 'e.g. HP, Canon'
+                           : item.category === 'Scanner' ? 'e.g. HP, Canon, Epson'
+                           : 'optional';
+
+    return `
+    <div class="kit-item" data-idx="${idx}">
+      <div class="kit-item-head">
+        <input type="checkbox" class="kit-item-check" checked>
+        <div>
+          <div class="kit-item-name">${escapeHtml(displayName)}</div>
+          <div class="kit-item-cat">${escapeHtml(item.category)}${item.accessories ? ' · incl. keyboard + mouse' : ''}</div>
+        </div>
+      </div>
+      <div class="kit-item-fields">
+        <div>
+          <label>Qty</label>
+          <input type="number" class="kit-item-qty" value="1" min="1">
+        </div>
+        <div>
+          <label>Make</label>
+          <input type="text" class="kit-item-make" placeholder="${makePlaceholder}" ${makeListId ? `list="${makeListId}"` : ''}>
+        </div>
+        <div>
+          <label>Model</label>
+          <input type="text" class="kit-item-model" placeholder="${modelPlaceholder}" ${modelListId ? `list="${modelListId}"` : ''}>
+        </div>
+        <div>
+          <label>Serial</label>
+          <div class="field-with-btn">
+            <input type="text" class="kit-item-serial" placeholder="optional">
+            <button type="button" class="scan-btn" onclick="scanKitSerial(${idx})" title="Scan barcode / QR code">▦</button>
+          </div>
+        </div>
+      </div>
+      ${isSystem ? `
+      <div class="row2" style="margin-top:8px;">
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">Processor</label>
+          <input type="text" class="kit-item-processor" placeholder="e.g. i3 10th Gen" style="font-size:13px;padding:9px 10px;">
+        </div>
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">RAM</label>
+          <input type="text" class="kit-item-ram" placeholder="e.g. 8GB" list="kitRamList" style="font-size:13px;padding:9px 10px;">
+        </div>
+      </div>
+      <div class="row2" style="margin-top:8px;">
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">Storage (GB)</label>
+          <input type="text" class="kit-item-storage" placeholder="e.g. 256" list="kitStorageList" style="font-size:13px;padding:9px 10px;">
+        </div>
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">Storage Type</label>
+          <select class="kit-item-storagetype" style="font-size:13px;padding:9px 10px;">
+            <option value="">Select…</option>
+            <option>HDD</option>
+            <option>SSD</option>
+          </select>
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function scanKitSerial(idx){
+  const row = document.querySelector(`.kit-item[data-idx="${idx}"]`);
+  if(!row) return;
+  const input = row.querySelector('.kit-item-serial');
+  openBarcodeScanner('single', input);
+}
+
+document.getElementById('openRoleKitBtn').addEventListener('click', openRoleKitModal);
+document.getElementById('closeRoleKitModal').addEventListener('click', closeRoleKitModal);
+function renderComputerLabItems(){
+  document.getElementById('kitItemsList').innerHTML = `
+    <div class="kit-item">
+      <div class="kit-item-head">
+        <input type="checkbox" class="kit-item-check" id="labServerCheck" checked>
+        <div>
+          <div class="kit-item-name">Server</div>
+          <div class="kit-item-cat">System</div>
+        </div>
+      </div>
+      <div class="kit-item-fields">
+        <div><label>Qty</label><input type="number" id="labServerQty" value="1" min="1"></div>
+        <div><label>Make</label><input type="text" id="labServerMake" list="kitSystemMakeList" placeholder="e.g. HP, Dell"></div>
+        <div><label>Model</label><input type="text" id="labServerModel" placeholder="optional"></div>
+      </div>
+      <div class="row2" style="margin-top:8px;">
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">Processor</label>
+          <input type="text" id="labServerProcessor" placeholder="e.g. Xeon" style="font-size:13px;padding:9px 10px;">
+        </div>
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">RAM</label>
+          <input type="text" id="labServerRam" list="kitRamList" placeholder="e.g. 16GB" style="font-size:13px;padding:9px 10px;">
+        </div>
+      </div>
+      <div class="row2" style="margin-top:8px;">
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">Storage (GB)</label>
+          <input type="text" id="labServerStorage" list="kitStorageList" placeholder="e.g. 512" style="font-size:13px;padding:9px 10px;">
+        </div>
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">Storage Type</label>
+          <select id="labServerStorageType" style="font-size:13px;padding:9px 10px;">
+            <option value="">Select…</option>
+            <option>HDD</option>
+            <option>SSD</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <label style="font-size:10px;margin:0 0 4px 0;">Serial Numbers <span style="font-weight:400;color:var(--text-faint);">(one per line, or scan — each becomes its own entry)</span></label>
+        <textarea id="labServerSerials" style="min-height:44px;font-size:13px;padding:9px 10px;" placeholder="Leave blank to just use Qty above"></textarea>
+        <button type="button" class="btn ghost small" style="margin-top:6px;" onclick="scanKitBatch('labServerSerials')">▦ Scan to add serial</button>
+      </div>
+    </div>
+
+    <div class="kit-item">
+      <div class="kit-item-head">
+        <input type="checkbox" class="kit-item-check" id="labNetCheck" checked>
+        <div>
+          <div class="kit-item-name">VCloud / NComputing</div>
+          <div class="kit-item-cat">Thin client</div>
+        </div>
+      </div>
+      <label style="font-size:10px;margin:0 0 4px 0;">Type</label>
+      <select id="labNetCategory" onchange="toggleLabNetYear()" style="margin-bottom:10px;">
+        <option value="VCloudPoint">VCloudPoint</option>
+        <option value="NComputing">NComputing</option>
+      </select>
+      <div id="labNetYearGroup" style="display:none; margin-bottom:10px;">
+        <label style="font-size:10px;margin:0 0 4px 0;">Batch</label>
+        <select id="labNetYear">
+          <option value="2015 BELOW">2015 BELOW</option>
+          <option value="2015 ABOVE">2015 ABOVE</option>
+        </select>
+      </div>
+      <div class="kit-item-fields">
+        <div><label>Qty</label><input type="number" id="labNetQty" value="1" min="1"></div>
+        <div><label>Make</label><input type="text" id="labNetMake" placeholder="optional"></div>
+        <div><label>Model</label><input type="text" id="labNetModel" placeholder="optional — defaults per type"></div>
+      </div>
+      <div style="margin-top:8px;">
+        <label style="font-size:10px;margin:0 0 4px 0;">Serial Numbers <span style="font-weight:400;color:var(--text-faint);">(one per line, or scan — each becomes its own entry)</span></label>
+        <textarea id="labNetSerials" style="min-height:44px;font-size:13px;padding:9px 10px;" placeholder="Leave blank to just use Qty above"></textarea>
+        <button type="button" class="btn ghost small" style="margin-top:6px;" onclick="scanKitBatch('labNetSerials')">▦ Scan to add serial</button>
+      </div>
+    </div>
+
+    <div class="kit-item">
+      <div class="kit-item-head">
+        <input type="checkbox" class="kit-item-check" id="labMonitorCheck" checked>
+        <div>
+          <div class="kit-item-name">Monitor</div>
+          <div class="kit-item-cat">Monitor</div>
+        </div>
+      </div>
+      <div class="kit-item-fields">
+        <div><label>Qty</label><input type="number" id="labMonitorQty" value="1" min="1"></div>
+        <div><label>Make</label><input type="text" id="labMonitorMake" placeholder="optional"></div>
+        <div><label>Model</label><input type="text" id="labMonitorModel" list="kitMonitorSizeList" placeholder="e.g. 18.5 Inch"></div>
+      </div>
+      <div style="margin-top:8px;">
+        <label style="font-size:10px;margin:0 0 4px 0;">Serial Numbers <span style="font-weight:400;color:var(--text-faint);">(one per line, or scan — each becomes its own entry)</span></label>
+        <textarea id="labMonitorSerials" style="min-height:44px;font-size:13px;padding:9px 10px;" placeholder="Leave blank to just use Qty above"></textarea>
+        <button type="button" class="btn ghost small" style="margin-top:6px;" onclick="scanKitBatch('labMonitorSerials')">▦ Scan to add serial</button>
+      </div>
+    </div>
+
+    <div class="kit-item">
+      <div class="kit-item-head">
+        <input type="checkbox" class="kit-item-check" id="labKeyboardCheck" checked>
+        <div>
+          <div class="kit-item-name">Keyboard</div>
+          <div class="kit-item-cat">Accessory</div>
+        </div>
+      </div>
+      <div class="row2">
+        <div><label>Qty</label><input type="number" id="labKeyboardQty" value="1" min="1"></div>
+        <div><label>Make</label><input type="text" id="labKeyboardMake" placeholder="optional"></div>
+      </div>
+    </div>
+
+    <div class="kit-item">
+      <div class="kit-item-head">
+        <input type="checkbox" class="kit-item-check" id="labMouseCheck" checked>
+        <div>
+          <div class="kit-item-name">Mouse</div>
+          <div class="kit-item-cat">Accessory</div>
+        </div>
+      </div>
+      <div class="row2">
+        <div><label>Qty</label><input type="number" id="labMouseQty" value="1" min="1"></div>
+        <div><label>Make</label><input type="text" id="labMouseMake" placeholder="optional"></div>
+      </div>
+    </div>
+
+    <div class="kit-item">
+      <div class="kit-item-head">
+        <input type="checkbox" id="labOthersCheck">
+        <div>
+          <div class="kit-item-name">Others</div>
+          <div class="kit-item-cat">Anything not already listed above</div>
+        </div>
+      </div>
+      <div class="row2">
+        <div><label>Qty</label><input type="number" id="labOthersQty" value="1" min="1"></div>
+        <div><label>Name</label><input type="text" id="labOthersName" placeholder="e.g. UPS, extension board"></div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleLabNetYear(){
+  const cat = document.getElementById('labNetCategory').value;
+  document.getElementById('labNetYearGroup').style.display = cat === 'NComputing' ? 'block' : 'none';
+}
+
+function scanKitBatch(targetId){
+  openBarcodeScanner('batch', document.getElementById(targetId));
+}
+
+function saveComputerLabKit(branch, floor, room, empName){
+  let saved = 0;
+
+  function splitSerials(text){
+    return text.trim() ? text.trim().split(/[,\n]/).map(s=> s.trim()).filter(Boolean) : [];
+  }
+
+  function pushEntry(overrides){
+    ENTRIES.unshift({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      branch, floor, room,
+      status: 'Working', remarks: empName ? ('Assigned to: ' + empName) : '',
+      globalId: '', empName: '', empPhone: '',
+      processor: '', ramGb: '', storageGb: '', storageType: '',
+      hasKeyboard: false, hasMouse: false, keyboardQty: '', mouseQty: '',
+      nvrStorage: '',
+      geoLat: GEO ? GEO.lat : null,
+      geoLng: GEO ? GEO.lng : null,
+      geoAcc: GEO ? GEO.acc : null,
+      ts: new Date().toISOString(),
+      ...overrides
+    });
+    saved++;
+  }
+
+  function pushMultiOrQty(base, qty, serialsText){
+    const serials = splitSerials(serialsText);
+    if(serials.length > 0){
+      serials.forEach(serial=> pushEntry({ ...base, serial, qty: '1' }));
+    } else {
+      pushEntry({ ...base, serial: '-', qty: qty || '1' });
+    }
+  }
+
+  // Server
+  if(document.getElementById('labServerCheck').checked){
+    const make = document.getElementById('labServerMake').value.trim() || '-';
+    const model = document.getElementById('labServerModel').value.trim() || '-';
+    const qty = document.getElementById('labServerQty').value || '1';
+    const processor = document.getElementById('labServerProcessor').value.trim();
+    const ramGb = document.getElementById('labServerRam').value.trim();
+    const storageGb = document.getElementById('labServerStorage').value.trim();
+    const storageType = document.getElementById('labServerStorageType').value;
+    const serialsText = document.getElementById('labServerSerials').value;
+    pushMultiOrQty({ category: 'System', name: 'Server', make, model, processor, ramGb, storageGb, storageType }, qty, serialsText);
+  }
+
+  // VCloudPoint / NComputing
+  if(document.getElementById('labNetCheck').checked){
+    const netCategory = document.getElementById('labNetCategory').value;
+    const isNC = netCategory === 'NComputing';
+    const name = isNC ? document.getElementById('labNetYear').value : 'VCLOUDPOINT';
+    const make = document.getElementById('labNetMake').value.trim() || '-';
+    const modelTyped = document.getElementById('labNetModel').value.trim();
+    const model = modelTyped || (isNC ? 'L300' : 'V1');
+    const qty = document.getElementById('labNetQty').value || '1';
+    const serialsText = document.getElementById('labNetSerials').value;
+    pushMultiOrQty({ category: 'VCloudPoint/NComputing', name, make, model }, qty, serialsText);
+  }
+
+  // Monitor
+  if(document.getElementById('labMonitorCheck').checked){
+    const make = document.getElementById('labMonitorMake').value.trim() || '-';
+    const model = document.getElementById('labMonitorModel').value.trim() || '-';
+    const qty = document.getElementById('labMonitorQty').value || '1';
+    const serialsText = document.getElementById('labMonitorSerials').value;
+    pushMultiOrQty({ category: 'Monitor', name: 'Monitor', make, model }, qty, serialsText);
+  }
+
+  // Keyboard
+  if(document.getElementById('labKeyboardCheck').checked){
+    const make = document.getElementById('labKeyboardMake').value.trim() || '-';
+    const qty = document.getElementById('labKeyboardQty').value || '1';
+    pushEntry({ category: 'Keyboard', name: 'Keyboard', make, model: '-', serial: '-', qty });
+  }
+
+  // Mouse
+  if(document.getElementById('labMouseCheck').checked){
+    const make = document.getElementById('labMouseMake').value.trim() || '-';
+    const qty = document.getElementById('labMouseQty').value || '1';
+    pushEntry({ category: 'Mouse', name: 'Mouse', make, model: '-', serial: '-', qty });
+  }
+
+  // Others
+  if(document.getElementById('labOthersCheck').checked){
+    const freeName = document.getElementById('labOthersName').value.trim();
+    if(freeName){
+      const qty = document.getElementById('labOthersQty').value || '1';
+      pushEntry({ category: 'Other', name: freeName, make: '-', model: '-', serial: '-', qty });
+    }
+  }
+
+  return saved;
+}
+
+document.getElementById('kitRole').addEventListener('change', ()=>{
+  const role = document.getElementById('kitRole').value;
+  if(role === 'Computer Lab') renderComputerLabItems();
+  else renderKitItems(role);
+});
+
+document.getElementById('saveKitBtn').addEventListener('click', ()=>{
+  const statusEl = document.getElementById('kitStatus');
+  const role = document.getElementById('kitRole').value;
+  const branch = document.getElementById('kitBranch').value.trim();
+  const floor = document.getElementById('kitFloor').value.trim() || '-';
+  const room = document.getElementById('kitRoom').value.trim() || '-';
+  const empName = document.getElementById('kitEmpName').value.trim();
+
+  if(!role || !branch){
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Role and Branch are required.';
+    return;
+  }
+
+  const items = ROLE_KITS[role] || [];
+  const rows = document.querySelectorAll('#kitItemsList .kit-item');
+  let saved = 0;
+
+  if(role === 'Computer Lab'){
+    saved = saveComputerLabKit(branch, floor, room, empName);
+  } else {
+  rows.forEach(row=>{
+    const idx = Number(row.dataset.idx);
+    const item = items[idx];
+    if(!row.querySelector('.kit-item-check').checked) return;
+
+    if(item.freeform){
+      const freeName = row.querySelector('.kit-item-freename').value.trim();
+      if(!freeName) return; // "Others" ticked but no name typed — nothing to save
+      const freeQty = row.querySelector('.kit-item-qty').value || '1';
+      ENTRIES.unshift({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+        branch, category: item.category, name: freeName,
+        floor, room,
+        make: '-', model: '-', serial: '-', qty: freeQty,
+        status: 'Working', remarks: empName ? ('Assigned to: ' + empName) : '',
+        globalId: '', empName: '', empPhone: '',
+        processor: '', ramGb: '', storageGb: '', storageType: '',
+        hasKeyboard: false, hasMouse: false, keyboardQty: '', mouseQty: '',
+        nvrStorage: '',
+        geoLat: GEO ? GEO.lat : null,
+        geoLng: GEO ? GEO.lng : null,
+        geoAcc: GEO ? GEO.acc : null,
+        ts: new Date().toISOString()
+      });
+      saved++;
+      return;
+    }
+
+    const qty = row.querySelector('.kit-item-qty').value || '1';
+    const make = row.querySelector('.kit-item-make').value.trim() || '-';
+    const model = row.querySelector('.kit-item-model').value.trim() || '-';
+    const serial = row.querySelector('.kit-item-serial').value.trim() || '-';
+    const name = item.nameOverride || item.label;
+    const isSystem = item.category === 'System';
+
+    const processorEl = row.querySelector('.kit-item-processor');
+    const ramEl = row.querySelector('.kit-item-ram');
+    const storageEl = row.querySelector('.kit-item-storage');
+    const storageTypeEl = row.querySelector('.kit-item-storagetype');
+
+    ENTRIES.unshift({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      branch, category: item.category, name,
+      floor, room,
+      make, model, serial, qty,
+      status: 'Working', remarks: empName ? ('Assigned to: ' + empName) : '',
+      globalId: '', empName: isSystem ? empName : '', empPhone: '',
+      processor: (isSystem && processorEl) ? processorEl.value.trim() : '',
+      ramGb: (isSystem && ramEl) ? ramEl.value.trim() : '',
+      storageGb: (isSystem && storageEl) ? storageEl.value.trim() : '',
+      storageType: (isSystem && storageTypeEl) ? storageTypeEl.value : '',
+      hasKeyboard: !!item.accessories, hasMouse: !!item.accessories,
+      keyboardQty: item.accessories ? qty : '', mouseQty: item.accessories ? qty : '',
+      nvrStorage: '',
+      geoLat: GEO ? GEO.lat : null,
+      geoLng: GEO ? GEO.lng : null,
+      geoAcc: GEO ? GEO.acc : null,
+      ts: new Date().toISOString()
+    });
+    saved++;
+  });
+  }
+
+  if(saved === 0){
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Nothing selected — tick at least one item to save.';
+    return;
+  }
+
+  saveEntries();
+  refreshBranchList();
+  updateSyncBadge();
+  closeRoleKitModal();
+  showToast(`${role} kit saved · ${saved} items added`);
+});
+
+function initSelects(){
+  document.getElementById('fCategory').innerHTML += CATEGORIES.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('fStatus').innerHTML = STATUSES.map(s=>`<option ${s==='Working'?'selected':''}>${s}</option>`).join('');
+}
+
+function populateNameSuggestions(category){
+  const items = CATALOG[category] || [];
+  document.getElementById('nameList').innerHTML = items.map(i=>`<option value="${escapeHtml(i.name)}">`).join('');
+}
+
+/* Make suggestions per category, shown as datalist options on the Make field.
+   For Audio, these are overridden per sub-type (Amplifier/Speaker/Mic) by
+   updateFieldSuggestions() below. */
+const MAKE_SUGGESTIONS = {
+  "Interactive Panel": ["Viewsonic","Logic","Evota","Gladwin","Teachmint","Crowntouch","Newline"],
+  "TV Display": ["LG","Panasonic","Samsung"],
+  "Projector": ["BenQ","Hitachi","Panasonic","Viewsonic"]
+};
+
+/* Model suggestions per category, shown as datalist options on the Model field. */
+const MODEL_SUGGESTIONS = {
+  "TV Display": ["32 Inch","55 Inch","65 Inch","98 Inch"]
+};
+
+/* Audio sub-type presets: which Make/Model options to suggest once the person
+   picks Amplifier / Speaker / Mic as the Asset Name under the Audio category.
+   Everything here is still a free-text field underneath — these are just
+   tap-to-fill suggestions, manual entry always works too. */
+const AUDIO_OPTIONS = {
+  "Amplifier": {
+    makes: ["Ahuja"],
+    models: ["SSB45EM","SSB250EM","SSB350EM","SSB5000EM","SSB7000EM","SSB10000EM"]
+  },
+  "Speaker": {
+    makes: ["Ahuja"],
+    models: ["400T","6305","SRX250"]
+  },
+  "Mic": {
+    makes: ["Ahuja"],
+    models: ["Wired Mic","Wireless Mic","Table Mic"]
+  }
+};
+
+function updateFieldSuggestions(){
+  const category = document.getElementById('fCategory').value;
+  const name = document.getElementById('fName').value.trim();
+  const audioOpts = (category === 'Audio') ? AUDIO_OPTIONS[name] : null;
+
+  const makes = audioOpts ? audioOpts.makes : (MAKE_SUGGESTIONS[category] || []);
+  const models = audioOpts ? audioOpts.models : (MODEL_SUGGESTIONS[category] || []);
+
+  document.getElementById('makeSuggestList').innerHTML = makes.map(m=>`<option value="${escapeHtml(m)}">`).join('');
+  document.getElementById('modelSuggestList').innerHTML = models.map(m=>`<option value="${escapeHtml(m)}">`).join('');
+
+  // NComputing needs an extra "Batch" choice (before/after 2015) once picked as the Asset Name
+  const showNcBatch = (category === 'VCloudPoint/NComputing' && name === 'NCOMPUTING');
+  document.getElementById('ncBatchGroup').style.display = showNcBatch ? 'block' : 'none';
+  if(!showNcBatch) document.getElementById('fNcBatch').value = '';
+}
+
+function tryAutoFillFromCatalog(){
+  const category = document.getElementById('fCategory').value;
+  const typed = document.getElementById('fName').value.trim().toLowerCase();
+  const items = CATALOG[category] || [];
+  const match = items.find(i=> i.name.toLowerCase() === typed);
+  if(match){
+    document.getElementById('fMake').value = match.make;
+    document.getElementById('fModel').value = match.model;
+  }
+}
+
+function toggleAccessoryQty(which){
+  const cb = document.getElementById(which === 'Keyboard' ? 'fHasKeyboard' : 'fHasMouse');
+  const qty = document.getElementById(which === 'Keyboard' ? 'fKeyboardQty' : 'fMouseQty');
+  const cat = document.getElementById('fCategory').value;
+  const isThinClient = (cat === 'VCloudPoint/NComputing');
+  if(isThinClient){
+    // VCloudPoint/NComputing: keyboard/mouse are always exactly 1 each, no box to edit
+    qty.value = '1';
+    qty.style.display = 'none';
+  } else {
+    qty.style.display = cb.checked ? 'block' : 'none';
+  }
+}
+
+function toggleSystemConfig(){
+  const cat = document.getElementById('fCategory').value;
+  const isThinClient = (cat === 'VCloudPoint/NComputing');
+
+  document.getElementById('laptopSection').style.display = (cat === 'Laptop') ? 'block' : 'none';
+  document.getElementById('systemConfigSection').style.display = (cat === 'System' || cat === 'Laptop' || cat === 'Server') ? 'block' : 'none';
+  document.getElementById('accessoriesSection').style.display = (cat === 'System' || cat === 'Server' || isThinClient) ? 'block' : 'none';
+  if(isThinClient){
+    // keyboard/mouse qty boxes never show for these two — always exactly 1 each
+    document.getElementById('fKeyboardQty').value = '1';
+    document.getElementById('fKeyboardQty').style.display = 'none';
+    document.getElementById('fMouseQty').value = '1';
+    document.getElementById('fMouseQty').style.display = 'none';
+  }
+  document.getElementById('nvrStorageSection').style.display = (cat === 'NVR' || cat === 'DVR') ? 'block' : 'none';
+
+  // DVR SMPS is a simple stock item — just needs a quantity, skip Make/Model/Serial.
+  const isQtyOnly = (cat === 'DVR SMPS');
+  document.getElementById('makeModelRow').style.display = isQtyOnly ? 'none' : 'grid';
+  document.getElementById('serialFieldGroup').style.display = isQtyOnly ? 'none' : 'block';
+  document.getElementById('serialQtyRow').style.gridTemplateColumns = isQtyOnly ? '1fr' : '1fr 1fr';
+
+  // VCloudPoint / NComputing: Asset Name + Model only, no Make field, and a single
+  // Serial No + single scanner (no batch box — one unit per entry for these two).
+  document.getElementById('makeFieldGroup').style.display = isThinClient ? 'none' : 'block';
+  document.getElementById('makeModelRow').style.gridTemplateColumns = (isThinClient && !isQtyOnly) ? '1fr' : (isQtyOnly ? '1fr' : '1fr 1fr');
+  document.getElementById('batchSerialsGroup').style.display = 'none';
+
+  // Qty is fixed at 1 for both VCloudPoint and NComputing — one entry per unit,
+  // no need to edit it (use the Serial scanner to log each unit individually).
+  const qtyEl = document.getElementById('fQty');
+  if(isThinClient) qtyEl.value = '1';
+  qtyEl.disabled = isThinClient;
+
+  if(cat === 'DVR SMPS'){
+    document.getElementById('fName').value = 'SMPS';
+  } else if(cat === 'Interactive Panel'){
+    document.getElementById('fName').value = 'INTERACTIVE PANEL';
+  } else if(cat === 'TV Display'){
+    document.getElementById('fName').value = 'TV';
+  } else if(cat === 'Projector'){
+    document.getElementById('fName').value = 'PROJECTOR';
+  } else if(cat === 'Biometric'){
+    document.getElementById('fName').value = 'BIOMETRIC';
+  }
+  // VCloudPoint/NComputing: Asset Name is picked from the "VCLOUDPOINT" /
+  // "2015 BELOW" / "2015 ABOVE" suggestions (populated by populateNameSuggestions
+  // from the catalog below), which auto-fills Model accordingly (V1 or L300) —
+  // same mechanism as Printer/CCTV/NVR suggestions.
+}
+
+function toggleNvrStorageOther(){
+  const v = document.getElementById('fNvrStorage').value;
+  document.getElementById('nvrStorageOtherGroup').style.display = (v === '__OTHER__') ? 'block' : 'none';
+}
+
+document.getElementById('fCategory').addEventListener('change', ()=>{
+  // switching category invalidates whatever Name/Make/Model/Serial were filled
+  // in for the previous category — clear them so nothing stale carries over
+  document.getElementById('fName').value = '';
+  document.getElementById('fMake').value = '';
+  document.getElementById('fModel').value = '';
+  document.getElementById('fSerial').value = '';
+  document.getElementById('fSerialsBatch').value = '';
+  populateNameSuggestions(document.getElementById('fCategory').value);
+  updateFieldSuggestions(); // sets Make/Model suggestion lists (includes MAKE_SUGGESTIONS categories too)
+  toggleSystemConfig(); // re-applies category-specific defaults, e.g. VCloudPoint's fixed name/model
+});
+document.getElementById('fName').addEventListener('input', ()=>{ tryAutoFillFromCatalog(); updateFieldSuggestions(); });
+document.getElementById('fName').addEventListener('change', ()=>{ tryAutoFillFromCatalog(); updateFieldSuggestions(); });
+
+/* Official NSPIRA branch list — powers the Branch suggestion dropdown.
+   Anything typed that isn't in this list still gets saved fine (e.g. a
+   brand-new branch), it just won't show as a suggestion until it's been
+   entered once on this device. */
+const BRANCHES = [
+  "AP-KRI-AVG-NSPIRA-S-5589",
+  "AP-KRI-GDV-NSPIRA-C-6041",
+  "AP-KRI-GDV-NSPIRA-S-5480",
+  "AP-KRI-GVRM-NSPIRA-S-5781",
+  "AP-KRI-HJN-NSPIRA-S-6910",
+  "AP-KRI-JPT-NSPIRA-S-5491",
+  "AP-KRI-MG-NSPIRA-C-5926",
+  "AP-KRI-MG-NSPIRA-S-5675",
+  "AP-KRI-MTM-NSPIRA-C-6042",
+  "AP-KRI-MTM-NSPIRA-S-5780",
+  "AP-KRI-MYVM-NSPIRA-S-6908",
+  "AP-KRI-NDG-NSPIRA-S-5667",
+  "AP-KRI-NZV-NSPIRA-S-5668",
+  "AP-KRI-TVR-NSPIRA-S-6909",
+  "AP-KRI-VIJ-ASN-NSPIRA-S-7097",
+  "AP-KRI-VIJ-BVP-NSPIRA-C-5186",
+  "AP-KRI-VIJ-BVP-NSPIRA-S-5622",
+  "AP-KRI-VIJ-CN-NSPIRA-S-5183",
+  "AP-KRI-VIJ-CO N40(GH)-NSPIRA-C-6400",
+  "AP-KRI-VIJ-EC-NSPIRA-C-7117",
+  "AP-KRI-VIJ-EDP-NSPIRA-S-(H)-5909",
+  "AP-KRI-VIJ-ER-NSPIRA-C-5191",
+  "AP-KRI-VIJ-GPD-NSPIRA-S-6352",
+  "AP-KRI-VIJ-GSB(BH)-NSPIRA-C-6116",
+  "AP-KRI-VIJ-HSR-NSPIRA-S-5476",
+  "AP-KRI-VIJ-JB(H)-NSPIRA-C-6204",
+  "AP-KRI-VIJ-KBEC-NSPIRA-C-5189",
+  "AP-KRI-VIJ-KND-ETS-NSPIRA-S-5817",
+  "AP-KRI-VIJ-KND-ONCS-NSPIRA-S-6579",
+  "AP-KRI-VIJ-KNR-(H)-NSPIRA-S-5942",
+  "AP-KRI-VIJ-KNR-N120(H)-NSPIRA-C-6210",
+  "AP-KRI-VIJ-MGP-COS-NSPIRA-S-6967",
+  "AP-KRI-VIJ-MGP-ONCS-NSPIRA-S-5184",
+  "AP-KRI-VIJ-MN-NSPIRA-S-5884",
+  "AP-KRI-VIJ-NAD-NSPIRA-C-5195",
+  "AP-KRI-VIJ-NB(H)-NICS-NSPIRA-S-6956",
+  "AP-KRI-VIJ-NELITE-NSPIRA-C-5182",
+  "AP-KRI-VIJ-PRK(BH)-NSPIRA-C-6115",
+  "AP-KRI-VIJ-PRK(GH)-NSPIRA-C-5906",
+  "AP-KRI-VIJ-SB(BH)-NSPIRA-C-6383",
+  "AP-KRI-VIJ-SBVCO(BH)-NSPIRA-C-6097",
+  "AP-KRI-VIJ-SHB(GH)-NSPIRA-C-6311",
+  "AP-KRI-VIJ-SKB(BH)-NSPIRA-C-5180",
+  "AP-KRI-VIJ-SPARK-NSPIRA-C-6112",
+  "AP-KRI-VIJ-STAR CO(H)-NSPIRA-C-7148",
+  "AP-KRI-VIJ-SV1(GH)-NSPIRA-C-6236",
+  "AP-KRI-VIJ-SV2(GH)-NSPIRA-C-5894",
+  "AP-KRI-VIJ-SV3(GH)-NSPIRA-C-7154",
+  "AP-KRI-VIJ-VB-NSPIRA-C-6582",
+  "AP-KRI-VIJ-VVS(BH)-NSPIRA-C-6237",
+  "AP-KRI-VYR-NSPIRA-C-5198",
+  "AP-KRI-VYR-NSPIRA-S-5669",
+  "NSPIRA-AP-S-6064",
+  "VIJ-ANNAPURNA-NSPIRA-PR-6413",
+  "VIJ-CO-N-120-NSPIRA-C-6402",
+  "VIJ-NSPIRA-PRO-WH-6035",
+  "VIJ-NSPIRA-SS-WH-6124",
+  "VIJ-NSPIRA-VEG-WH-5562",
+  "AP-KRI-VIJ-COS DAY KNR-NSPIRA-S-7160",
+  "VIJ-NSPIRA-WORKSHOP-6950"
+];
+
+const FLOORS = [
+  "Cellar",
+  "Ground Floor",
+  "1st Floor",
+  "2nd Floor",
+  "3rd Floor",
+  "4th Floor",
+  "5th Floor",
+  "Terrace"
+];
+
+function refreshBranchList(){
+  const dynamic = ENTRIES.map(e=>e.branch);
+  const all = [...new Set([...BRANCHES, ...dynamic])].sort();
+  document.getElementById('branchList').innerHTML = all.map(b=>`<option value="${escapeHtml(b)}">`).join('');
+}
+
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ===== Tabs ===== */
+document.querySelectorAll('.tab-item').forEach(el=>{
+  el.addEventListener('click', ()=> switchView(el.dataset.view));
+});
+function switchView(name){
+  document.querySelectorAll('.tab-item').forEach(n=> n.classList.toggle('active', n.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=> v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if(name==='entries') renderEntries();
+  if(name==='export') renderExportView();
+  window.scrollTo({top:0});
+}
+
+/* ===== Barcode / QR scanner (for Serial No) ===== */
+let scannerStream = null;
+let scannerRAF = null;
+let scannerDetector = null;
+let scannerMode = 'single'; // 'single' fills a target input and closes; 'batch' appends to the batch textarea and keeps scanning
+let scannerBatchCount = 0;
+let scannerBatchSeen = new Set(); // dedupes repeat scans of the same code within one batch session
+let scannerTargetInput = null; // where scanned values go — a text input for 'single', a textarea for 'batch'
+
+function openBarcodeScanner(mode, targetInput){
+  scannerMode = mode || 'single';
+  scannerTargetInput = targetInput || document.getElementById(scannerMode === 'batch' ? 'fSerialsBatch' : 'fSerial');
+  scannerBatchCount = 0;
+  scannerBatchSeen = new Set();
+  const modal = document.getElementById('barcodeModal');
+  const statusEl = document.getElementById('barcodeStatus');
+  document.getElementById('scannerTitleText').textContent = scannerMode === 'batch' ? 'Scan Serials (batch)' : 'Scan Serial Number';
+  modal.classList.add('active');
+
+  // prime the beep's audio context now, while still inside this tap's call stack —
+  // some mobile browsers block audio started later (e.g. from an async scan callback)
+  try{
+    if(!scanAudioCtx) scanAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(scanAudioCtx.state === 'suspended') scanAudioCtx.resume();
+  }catch(e){}
+
+  if(!('BarcodeDetector' in window)){
+    statusEl.textContent = 'Barcode scanning isn\'t supported in this browser. Please type the serial number manually, or open this app in Chrome on Android.';
+    statusEl.style.color = 'var(--red)';
+    return;
+  }
+
+  statusEl.style.color = 'var(--text-faint)';
+  statusEl.textContent = scannerMode === 'batch'
+    ? 'Center the first barcode fully inside the frame — only what\'s inside the box is scanned, so nearby codes are ignored. Each scan adds a serial, keep going and tap ✕ when done.'
+    : 'Center the barcode or QR code fully inside the frame — only what\'s inside the box is scanned.';
+
+  if(scannerMode === 'batch'){
+    // seed dedupe set with anything already in the target textarea (typed, pasted, or from an earlier scan session)
+    const existing = scannerTargetInput.value.trim();
+    if(existing){
+      existing.split(/[,\n]/).map(s=> s.trim()).filter(Boolean).forEach(s=> scannerBatchSeen.add(s));
+    }
+  }
+
+  scannerDetector = new BarcodeDetector({
+    formats: ['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e','codabar','itf','data_matrix']
+  });
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then((stream)=>{
+      scannerStream = stream;
+      const video = document.getElementById('barcodeVideo');
+      video.srcObject = stream;
+      scanLoop();
+    })
+    .catch(()=>{
+      statusEl.textContent = 'Could not access the camera — check camera permission for this app/site, or type the serial manually.';
+      statusEl.style.color = 'var(--red)';
+    });
+}
+
+let scanCropCanvas = null;
+let scanCropCtx = null;
+
+function getCroppedFrame(video){
+  // Only feed the detector the region inside the visible amber viewfinder
+  // (CSS .scanner-frame is inset 16% top/bottom, 10% left/right) so barcodes
+  // on neighboring items just outside the frame don't get picked up.
+  if(!scanCropCanvas){
+    scanCropCanvas = document.createElement('canvas');
+    scanCropCtx = scanCropCanvas.getContext('2d', { willReadFrequently: true });
+  }
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if(!vw || !vh) return null;
+
+  const sx = vw * 0.10, sy = vh * 0.16;
+  const sw = vw * 0.80, sh = vh * 0.68;
+
+  scanCropCanvas.width = sw;
+  scanCropCanvas.height = sh;
+  scanCropCtx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  return scanCropCanvas;
+}
+
+let scanAudioCtx = null;
+function playBeep(){
+  try{
+    if(!scanAudioCtx) scanAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = scanAudioCtx;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1046.5, ctx.currentTime); // a clean, short high beep
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.13);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.14);
+  }catch(e){ /* audio not available — scan still works silently */ }
+}
+
+function scanLoop(){
+  const video = document.getElementById('barcodeVideo');
+  if(!scannerDetector || !video || video.readyState < 2){
+    scannerRAF = requestAnimationFrame(scanLoop);
+    return;
+  }
+  const frame = getCroppedFrame(video);
+  if(!frame){
+    scannerRAF = requestAnimationFrame(scanLoop);
+    return;
+  }
+  scannerDetector.detect(frame)
+    .then((codes)=>{
+      if(codes && codes.length > 0){
+        const value = codes[0].rawValue;
+        if(scannerMode === 'batch'){
+          const statusEl = document.getElementById('barcodeStatus');
+          if(scannerBatchSeen.has(value)){
+            // same code still in frame (or scanned earlier this session) — don't add it again
+            statusEl.style.color = 'var(--text-faint)';
+            statusEl.textContent = `Already added "${value}" — move to the next item. ${scannerBatchCount} scanned so far.`;
+            setTimeout(()=>{
+              if(document.getElementById('barcodeModal').classList.contains('active')){
+                scannerRAF = requestAnimationFrame(scanLoop);
+              }
+            }, 500);
+            return;
+          }
+          scannerBatchSeen.add(value);
+          appendBatchSerial(value);
+          scannerBatchCount++;
+          playBeep();
+          statusEl.style.color = 'var(--teal)';
+          statusEl.textContent = `Added "${value}" · ${scannerBatchCount} scanned so far — keep scanning or tap ✕ when done.`;
+          showToast('Serial added: ' + value);
+          // brief pause so the same code isn't scanned twice in a row, then resume
+          setTimeout(()=>{
+            if(document.getElementById('barcodeModal').classList.contains('active')){
+              scannerRAF = requestAnimationFrame(scanLoop);
+            }
+          }, 900);
+        } else {
+          if(scannerTargetInput) scannerTargetInput.value = value;
+          playBeep();
+          showToast('Serial scanned: ' + value);
+          closeBarcodeScanner();
+        }
+      } else {
+        scannerRAF = requestAnimationFrame(scanLoop);
+      }
+    })
+    .catch(()=>{
+      scannerRAF = requestAnimationFrame(scanLoop);
+    });
+}
+
+function appendBatchSerial(value){
+  const ta = scannerTargetInput;
+  if(!ta) return;
+  const current = ta.value.trim();
+  ta.value = current ? (current + '\n' + value) : value;
+}
+
+function closeBarcodeScanner(){
+  document.getElementById('barcodeModal').classList.remove('active');
+  if(scannerRAF) cancelAnimationFrame(scannerRAF);
+  scannerRAF = null;
+  scannerDetector = null;
+  if(scannerStream){
+    scannerStream.getTracks().forEach(t=> t.stop());
+    scannerStream = null;
+  }
+  const video = document.getElementById('barcodeVideo');
+  if(video) video.srcObject = null;
+}
+
+document.getElementById('scanBarcodeBtn').addEventListener('click', ()=> openBarcodeScanner('single'));
+document.getElementById('scanBatchBtn').addEventListener('click', ()=> openBarcodeScanner('batch'));
+document.getElementById('closeBarcodeModal').addEventListener('click', closeBarcodeScanner);
+
+/* ===== Save entry ===== */
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const branch = document.getElementById('fBranch').value.trim();
+  const category = document.getElementById('fCategory').value;
+  const name = document.getElementById('fName').value.trim();
+
+  if(!branch || !category || !name){
+    showToast('Branch, category, and asset name are required', true);
+    return;
+  }
+
+  const isSystem = category === 'System';
+  const isLaptop = category === 'Laptop';
+  const isServer = category === 'Server';
+  const hasHwConfig = isSystem || isLaptop || isServer;
+  const hasAccessories = category === 'System' || category === 'Server' || category === 'VCloudPoint/NComputing';
+  const isThinClient = category === 'VCloudPoint/NComputing';
+  const isNvrDvr = category === 'NVR' || category === 'DVR';
+  const nvrStorageVal = document.getElementById('fNvrStorage').value;
+  const nvrStorage = nvrStorageVal === '__OTHER__'
+    ? document.getElementById('fNvrStorageOther').value.trim()
+    : nvrStorageVal;
+
+  // NComputing needs its Before/After 2015 batch folded into the saved name
+  let finalName = name;
+  if(isThinClient && name === 'NCOMPUTING'){
+    const batch = document.getElementById('fNcBatch').value;
+    if(batch) finalName = 'NCOMPUTING - ' + batch;
+  }
+
+  const baseEntry = {
+    branch, category, name: finalName,
+    floor: document.getElementById('fFloor').value.trim() || '-',
+    room: document.getElementById('fRoom').value.trim() || '-',
+    make: document.getElementById('fMake').value.trim() || '-',
+    model: document.getElementById('fModel').value.trim() || '-',
+    status: document.getElementById('fStatus').value,
+    remarks: document.getElementById('fRemarks').value.trim(),
+    globalId: isLaptop ? document.getElementById('fGlobalId').value.trim() : '',
+    empName: isLaptop ? document.getElementById('fEmpName').value.trim() : '',
+    empPhone: isLaptop ? document.getElementById('fEmpPhone').value.trim() : '',
+    processor: hasHwConfig ? document.getElementById('fProcessor').value.trim() : '',
+    ramGb: hasHwConfig ? document.getElementById('fRam').value.trim() : '',
+    storageGb: hasHwConfig ? document.getElementById('fStorage').value.trim() : '',
+    storageType: hasHwConfig ? document.getElementById('fStorageType').value : '',
+    hasKeyboard: hasAccessories ? document.getElementById('fHasKeyboard').checked : false,
+    hasMouse: hasAccessories ? document.getElementById('fHasMouse').checked : false,
+    keyboardQty: (hasAccessories && document.getElementById('fHasKeyboard').checked) ? (document.getElementById('fKeyboardQty').value || '1') : '',
+    mouseQty: (hasAccessories && document.getElementById('fHasMouse').checked) ? (document.getElementById('fMouseQty').value || '1') : '',
+    nvrStorage: isNvrDvr ? nvrStorage : '',
+    geoLat: GEO ? GEO.lat : null,
+    geoLng: GEO ? GEO.lng : null,
+    geoAcc: GEO ? GEO.acc : null
+  };
+
+  // If we're editing an existing entry, update it in place instead of
+  // creating new ones — batch-serial mode doesn't apply here, one entry in, one out.
+  if(editingEntryId){
+    const idx = ENTRIES.findIndex(x=> x.id === editingEntryId);
+    if(idx === -1){
+      showToast('That entry no longer exists — it may have been deleted', true);
+      editingEntryId = null;
+      document.getElementById('editBanner').style.display = 'none';
+      document.getElementById('saveBtn').textContent = 'Save entry';
+      return;
+    }
+    const original = ENTRIES[idx];
+    ENTRIES[idx] = {
+      ...original,
+      ...baseEntry,
+      serial: document.getElementById('fSerial').value.trim() || '-',
+      qty: document.getElementById('fQty').value || '1'
+    };
+    saveEntries();
+    refreshBranchList();
+    updateSyncBadge();
+
+    editingEntryId = null;
+    document.getElementById('editBanner').style.display = 'none';
+    document.getElementById('saveBtn').textContent = 'Save entry';
+    document.getElementById('clearBtnForm').click();
+    switchView('entries');
+    showToast('Entry updated');
+    return;
+  }
+
+  // VCloudPoint / NComputing batch: if serials were pasted, create one entry
+  // per serial (qty 1 each); otherwise fall back to a single combined entry
+  // using the Quantity field — same as every other category.
+  const batchSerialsRaw = isThinClient ? document.getElementById('fSerialsBatch').value.trim() : '';
+  const batchSerials = batchSerialsRaw
+    ? batchSerialsRaw.split(/[,\n]/).map(s=> s.trim()).filter(Boolean)
+    : [];
+
+  let savedCount = 0;
+  if(batchSerials.length > 0){
+    batchSerials.forEach(serial=>{
+      ENTRIES.unshift({
+        ...baseEntry,
+        id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+        serial, qty: '1',
+        ts: new Date().toISOString()
+      });
+      savedCount++;
+    });
+  } else {
+    ENTRIES.unshift({
+      ...baseEntry,
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      serial: document.getElementById('fSerial').value.trim() || '-',
+      qty: document.getElementById('fQty').value || '1',
+      ts: new Date().toISOString()
+    });
+    savedCount = 1;
+  }
+
+  saveEntries();
+  refreshBranchList();
+  updateSyncBadge();
+
+  // reset form but keep branch/floor/room for fast repeat entry in same location
+  document.getElementById('fCategory').value = '';
+  document.getElementById('fName').value = '';
+  populateNameSuggestions('');
+  document.getElementById('fMake').value = '';
+  document.getElementById('fModel').value = '';
+  document.getElementById('fSerial').value = '';
+  document.getElementById('fSerialsBatch').value = '';
+  document.getElementById('fQty').value = '1';
+  document.getElementById('fStatus').value = 'Working';
+  document.getElementById('fRemarks').value = '';
+  document.getElementById('fGlobalId').value = '';
+  document.getElementById('fEmpName').value = '';
+  document.getElementById('fEmpPhone').value = '';
+  document.getElementById('fProcessor').value = '';
+  document.getElementById('fRam').value = '';
+  document.getElementById('fStorage').value = '';
+  document.getElementById('fStorageType').value = '';
+  document.getElementById('fHasKeyboard').checked = false;
+  document.getElementById('fHasMouse').checked = false;
+  document.getElementById('fKeyboardQty').value = '1';
+  document.getElementById('fMouseQty').value = '1';
+  document.getElementById('fKeyboardQty').style.display = 'none';
+  document.getElementById('fMouseQty').style.display = 'none';
+  document.getElementById('fNvrStorage').value = '';
+  document.getElementById('fNcBatch').value = '';
+  document.getElementById('ncBatchGroup').style.display = 'none';
+  document.getElementById('fNvrStorageOther').value = '';
+  toggleNvrStorageOther();
+  toggleSystemConfig();
+  document.getElementById('fName').focus();
+
+  showToast(savedCount > 1 ? `${savedCount} entries saved · ${ENTRIES.length} total on this device` : `Entry saved · ${ENTRIES.length} total on this device`);
+});
+
+/* ===== Clear form ===== */
+document.getElementById('clearBtnForm').addEventListener('click', ()=>{
+  document.getElementById('fBranch').value = '';
+  document.getElementById('fFloor').value = '';
+  document.getElementById('fRoom').value = '';
+  document.getElementById('fCategory').value = '';
+  document.getElementById('fName').value = '';
+  populateNameSuggestions('');
+  document.getElementById('fMake').value = '';
+  document.getElementById('fModel').value = '';
+  document.getElementById('fSerial').value = '';
+  document.getElementById('fSerialsBatch').value = '';
+  document.getElementById('fQty').value = '1';
+  document.getElementById('fStatus').value = 'Working';
+  document.getElementById('fRemarks').value = '';
+  document.getElementById('fGlobalId').value = '';
+  document.getElementById('fEmpName').value = '';
+  document.getElementById('fEmpPhone').value = '';
+  document.getElementById('fProcessor').value = '';
+  document.getElementById('fRam').value = '';
+  document.getElementById('fStorage').value = '';
+  document.getElementById('fStorageType').value = '';
+  document.getElementById('fHasKeyboard').checked = false;
+  document.getElementById('fHasMouse').checked = false;
+  document.getElementById('fKeyboardQty').value = '1';
+  document.getElementById('fMouseQty').value = '1';
+  document.getElementById('fKeyboardQty').style.display = 'none';
+  document.getElementById('fMouseQty').style.display = 'none';
+  document.getElementById('fNvrStorage').value = '';
+  document.getElementById('fNcBatch').value = '';
+  document.getElementById('ncBatchGroup').style.display = 'none';
+  document.getElementById('fNvrStorageOther').value = '';
+  toggleNvrStorageOther();
+  toggleSystemConfig();
+  document.getElementById('fBranch').focus();
+  showToast('Form cleared');
+});
+
+/* ===== Entries list ===== */
+let COLLAPSED = new Set();
+
+function entryCardHtml(e, showBranchTag){
+  const isWorking = e.status === 'Working';
+  return `<div class="entry-card">
+    <div class="entry-top">
+      <div>
+        ${showBranchTag ? `<span class="entry-tag">${escapeHtml(e.branch)}</span>` : ''}
+        <div class="entry-name">${escapeHtml(e.name)}</div>
+        <div class="entry-meta">${escapeHtml(e.floor)} · ${escapeHtml(e.room)} · ${escapeHtml(e.category)}<br>${escapeHtml(e.make)} ${escapeHtml(e.model)} ${e.serial!=='-'?'· SN: '+escapeHtml(e.serial):''} · Qty ${escapeHtml(e.qty)}</div>
+      </div>
+      <span class="pill ${isWorking?'working':'bad'}"><span class="d"></span>${escapeHtml(e.status)}</span>
+    </div>
+    ${e.remarks ? `<div class="entry-meta" style="margin-top:6px;">📝 ${escapeHtml(e.remarks)}</div>` : ''}
+    ${(e.globalId || e.empName || e.empPhone) ? `<div class="entry-meta" style="margin-top:6px;">🪪 ${e.globalId?escapeHtml(e.globalId):'Global ID —'} · ${e.empName?escapeHtml(e.empName):'—'}${e.empPhone?' · '+escapeHtml(e.empPhone):''}</div>` : ''}
+    ${(e.processor || e.ramGb || e.storageGb || e.storageType) ? `<div class="entry-meta" style="margin-top:6px;">🖥️ ${escapeHtml(e.processor||'—')} · ${e.ramGb?escapeHtml(e.ramGb)+'GB RAM':'RAM —'} · ${e.storageGb?escapeHtml(e.storageGb)+'GB '+escapeHtml(e.storageType||''):'Storage —'}</div>` : ''}
+    ${(e.hasKeyboard || e.hasMouse) ? `<div class="entry-meta" style="margin-top:6px;">${e.hasKeyboard?'⌨️ Keyboard x'+escapeHtml(e.keyboardQty||'1'):''}${(e.hasKeyboard&&e.hasMouse)?' · ':''}${e.hasMouse?'🖱️ Mouse x'+escapeHtml(e.mouseQty||'1'):''}</div>` : ''}
+    ${e.nvrStorage ? `<div class="entry-meta" style="margin-top:6px;">💾 Storage: ${escapeHtml(e.nvrStorage)}</div>` : ''}
+    ${(e.geoLat!=null && e.geoLng!=null) ? `<div class="entry-meta" style="margin-top:4px;"><a href="https://maps.google.com/?q=${e.geoLat},${e.geoLng}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:none;">📍 View location on map ${e.geoAcc?('(±'+e.geoAcc+'m)'):''}</a></div>` : ''}
+    <div class="entry-actions">
+      <button class="icon-btn" onclick="editEntry('${e.id}')">✎ Edit</button>
+      <button class="icon-btn danger" onclick="deleteEntry('${e.id}')">Delete</button>
+    </div>
+  </div>`;
+}
+
+function toggleBranchGroup(encoded){
+  const branch = decodeURIComponent(encoded);
+  if(COLLAPSED.has(branch)) COLLAPSED.delete(branch);
+  else COLLAPSED.add(branch);
+  renderEntries();
+}
+
+function renderEntries(){
+  const totalQty = ENTRIES.reduce((s,e)=>s+(Number(e.qty)||0),0);
+  const branches = new Set(ENTRIES.map(e=>e.branch)).size;
+  const flagged = ENTRIES.filter(e=> e.status!=='Working').length;
+
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi" style="--kpi-accent:var(--amber)"><div class="lbl">Entries</div><div class="val">${ENTRIES.length}</div></div>
+    <div class="kpi" style="--kpi-accent:var(--teal)"><div class="lbl">Branches</div><div class="val">${branches}</div></div>
+    <div class="kpi" style="--kpi-accent:${flagged?'var(--red)':'var(--teal)'}"><div class="lbl">Flagged</div><div class="val" style="color:${flagged?'var(--red)':'var(--teal)'}">${flagged}</div></div>
+  `;
+
+  const q = (document.getElementById('searchBox').value||'').toLowerCase();
+  const rows = ENTRIES.filter(e=>{
+    if(!q) return true;
+    return [e.branch,e.floor,e.room,e.category,e.name,e.make,e.serial].join(' ').toLowerCase().includes(q);
+  });
+
+  if(rows.length === 0){
+    document.getElementById('entriesList').innerHTML = `<div class="empty"><div class="big">No entries yet</div>Switch to the Add tab to log your first asset.</div>`;
+    return;
+  }
+
+  // group by branch, preserving the order branches first appear in
+  // (ENTRIES is newest-first, so the most recently active branch floats to top)
+  const groups = new Map();
+  rows.forEach(e=>{
+    if(!groups.has(e.branch)) groups.set(e.branch, []);
+    groups.get(e.branch).push(e);
+  });
+
+  let html = '';
+  for(const [branch, items] of groups){
+    const collapsed = COLLAPSED.has(branch);
+    const qty = items.reduce((s,e)=>s+(Number(e.qty)||0),0);
+    html += `<div class="branch-group">
+      <div class="branch-group-head" onclick="toggleBranchGroup('${encodeURIComponent(branch)}')">
+        <span class="chev">${collapsed?'▸':'▾'}</span>
+        <span class="entry-tag" style="margin:0;">${escapeHtml(branch)}</span>
+        <span class="branch-group-count">${items.length} item${items.length!==1?'s':''} · qty ${qty}</span>
+      </div>
+      ${collapsed ? '' : `<div class="branch-group-body">${items.map(e=>entryCardHtml(e,false)).join('')}</div>`}
+    </div>`;
+  }
+  document.getElementById('entriesList').innerHTML = html;
+}
+
+function deleteEntry(id){
+  if(!confirm('Delete this entry?')) return;
+  ENTRIES = ENTRIES.filter(e=> e.id !== id);
+  saveEntries();
+  refreshBranchList();
+  updateSyncBadge();
+  renderEntries();
+}
+
+function editEntry(id){
+  const e = ENTRIES.find(x=> x.id === id);
+  if(!e) return;
+
+  editingEntryId = id;
+
+  // set branch/floor/room first
+  document.getElementById('fBranch').value = e.branch || '';
+  document.getElementById('fFloor').value = (e.floor && e.floor !== '-') ? e.floor : '';
+  document.getElementById('fRoom').value = (e.room && e.room !== '-') ? e.room : '';
+
+  // set category, which triggers suggestion lists + any category defaults —
+  // we override those defaults right after with the entry's real saved values
+  document.getElementById('fCategory').value = e.category || '';
+  populateNameSuggestions(e.category || '');
+  toggleSystemConfig();
+
+  // NComputing entries were saved as "NCOMPUTING - BEFORE 2015" etc — split that back apart
+  let nameForField = e.name || '';
+  let ncBatchValue = '';
+  if(e.category === 'VCloudPoint/NComputing' && nameForField.startsWith('NCOMPUTING - ')){
+    ncBatchValue = nameForField.slice('NCOMPUTING - '.length);
+    nameForField = 'NCOMPUTING';
+  }
+
+  document.getElementById('fName').value = nameForField;
+  document.getElementById('fMake').value = (e.make && e.make !== '-') ? e.make : '';
+  document.getElementById('fModel').value = (e.model && e.model !== '-') ? e.model : '';
+  document.getElementById('fSerial').value = (e.serial && e.serial !== '-') ? e.serial : '';
+  document.getElementById('fQty').value = e.qty || '1';
+  document.getElementById('fStatus').value = e.status || 'Working';
+  document.getElementById('fRemarks').value = e.remarks || '';
+
+  updateFieldSuggestions(); // now that fName is set, refresh Make/Model suggestions + NComputing batch group
+
+  if(ncBatchValue){
+    document.getElementById('fNcBatch').value = ncBatchValue;
+  }
+
+  document.getElementById('fGlobalId').value = e.globalId || '';
+  document.getElementById('fEmpName').value = e.empName || '';
+  document.getElementById('fEmpPhone').value = e.empPhone || '';
+  document.getElementById('fProcessor').value = e.processor || '';
+  document.getElementById('fRam').value = e.ramGb || '';
+  document.getElementById('fStorage').value = e.storageGb || '';
+  document.getElementById('fStorageType').value = e.storageType || '';
+
+  document.getElementById('fHasKeyboard').checked = !!e.hasKeyboard;
+  document.getElementById('fHasMouse').checked = !!e.hasMouse;
+  toggleAccessoryQty('Keyboard');
+  toggleAccessoryQty('Mouse');
+  if(e.hasKeyboard) document.getElementById('fKeyboardQty').value = e.keyboardQty || '1';
+  if(e.hasMouse) document.getElementById('fMouseQty').value = e.mouseQty || '1';
+
+  const nvrPresets = ['1TB','2TB','4TB','8TB','16TB'];
+  if(e.nvrStorage){
+    if(nvrPresets.includes(e.nvrStorage)){
+      document.getElementById('fNvrStorage').value = e.nvrStorage;
+    } else {
+      document.getElementById('fNvrStorage').value = '__OTHER__';
+      document.getElementById('fNvrStorageOther').value = e.nvrStorage;
+    }
+    toggleNvrStorageOther();
+  }
+
+  document.getElementById('editBanner').style.display = 'block';
+  document.getElementById('saveBtn').textContent = 'Update entry';
+  switchView('add');
+  document.getElementById('editBanner').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function cancelEditEntry(){
+  editingEntryId = null;
+  document.getElementById('editBanner').style.display = 'none';
+  document.getElementById('saveBtn').textContent = 'Save entry';
+  document.getElementById('clearBtnForm').click();
+}
+document.getElementById('cancelEditBtn').addEventListener('click', cancelEditEntry);
+
+document.getElementById('searchBox').addEventListener('input', renderEntries);
+
+/* ===== Export ===== */
+function getExportBranches(){
+  return [...new Set(ENTRIES.map(e=>e.branch))].sort();
+}
+
+function renderExportView(){
+  const sel = document.getElementById('exportBranchFilter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All branches</option>' +
+    getExportBranches().map(b=>`<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+  sel.value = cur;
+  updateExportCount();
+}
+
+function updateExportCount(){
+  const branch = document.getElementById('exportBranchFilter').value;
+  const rows = branch ? ENTRIES.filter(e=> e.branch === branch) : ENTRIES;
+  document.getElementById('exportCount').textContent = rows.length;
+}
+
+document.getElementById('exportBranchFilter').addEventListener('change', updateExportCount);
+
+function csvEscape(v){
+  v = String(v??'');
+  if(/[",\n]/.test(v)) return '"' + v.replace(/"/g,'""') + '"';
+  return v;
+}
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const branch = document.getElementById('exportBranchFilter').value;
+  const rows = branch ? ENTRIES.filter(e=> e.branch === branch) : ENTRIES;
+  if(rows.length === 0){ showToast('No entries to export for this filter', true); return; }
+  const headers = ['Branch','Floor','Room / Area','Asset Category','Asset Name','Make','Model','Serial No','Quantity','Status','Remarks','Global ID','Employee Name','Employee Phone','Processor','RAM (GB)','Storage (GB)','Storage Type','Keyboard Qty','Mouse Qty','NVR/DVR Storage','GPS Location'];
+  const lines = [headers.join(',')];
+  // export oldest-first so it reads naturally
+  [...rows].reverse().forEach(e=>{
+    const gps = (e.geoLat!=null && e.geoLng!=null) ? `${e.geoLat}, ${e.geoLng}` : '';
+    lines.push([e.branch,e.floor,e.room,e.category,e.name,e.make,e.model,e.serial,e.qty,e.status,e.remarks,e.globalId||'',e.empName||'',e.empPhone||'',e.processor||'',e.ramGb||'',e.storageGb||'',e.storageType||'',e.keyboardQty||'',e.mouseQty||'',e.nvrStorage||'',gps].map(csvEscape).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  const suffix = branch ? '_' + branch.replace(/[^a-zA-Z0-9]+/g,'-').slice(0,40) : '';
+  a.href = url; a.download = `assetline_collected_${stamp}${suffix}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exported');
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if(!confirm('This deletes every entry saved on this device. Export a CSV first if you need a copy. Continue?')) return;
+  ENTRIES = [];
+  saveEntries();
+  refreshBranchList();
+  updateSyncBadge();
+  showToast('All entries cleared');
+});
+
+/* ===== Toast ===== */
+let toastTimer;
+function showToast(msg, isError){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? 'var(--red)' : 'var(--teal)';
+  t.style.color = isError ? '#3d1414' : '#0a2b24';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+/* ===== Sync badge (online/offline + count) ===== */
+function updateSyncBadge(){
+  const badge = document.getElementById('syncBadge');
+  badge.textContent = ENTRIES.length + ' entries';
+  if(!navigator.onLine){
+    badge.textContent += ' · offline';
+    badge.classList.add('offline');
+  } else {
+    badge.classList.remove('offline');
+  }
+}
+window.addEventListener('online', updateSyncBadge);
+window.addEventListener('offline', updateSyncBadge);
+
+/* ===== GPS (location stamp per entry) ===== */
+let GEO = null; // {lat, lng, acc}
+
+function updateGeoBadge(state){
+  const el = document.getElementById('geoBadge');
+  if(!el) return;
+  el.classList.remove('ok','warn');
+  if(state === 'ready'){
+    el.textContent = `📍 GPS ready (±${GEO.acc}m) — new entries will be location-stamped`;
+    el.classList.add('ok');
+  } else if(state === 'locating'){
+    el.textContent = '📍 Getting location…';
+  } else if(state === 'denied'){
+    el.textContent = '📍 Location permission denied — entries will save without GPS';
+    el.classList.add('warn');
+  } else {
+    el.textContent = '📍 GPS not available on this device/browser';
+    el.classList.add('warn');
+  }
+}
+
+function initGeo(){
+  if(!('geolocation' in navigator)){ updateGeoBadge('unsupported'); return; }
+  updateGeoBadge('locating');
+  navigator.geolocation.watchPosition(
+    (pos)=>{
+      GEO = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+      updateGeoBadge('ready');
+    },
+    ()=>{ GEO = null; updateGeoBadge('denied'); },
+    { enableHighAccuracy: true, maximumAge: 20000, timeout: 20000 }
+  );
+}
+
+/* ===== Install prompt (Android/Chrome) ===== */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+document.getElementById('installBtn').addEventListener('click', async ()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+});
+window.addEventListener('appinstalled', ()=>{
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+/* ===== Service worker (offline support) ===== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+/* ===== Init ===== */
+initSelects();
+document.getElementById('floorList').innerHTML = FLOORS.map(f=>`<option value="${escapeHtml(f)}">`).join('');
+loadEntries();
+refreshBranchList();
+updateSyncBadge();
+initGeo();
+</script>
+</body>
+</html>
