@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nspira-it-collector-v57';
+const CACHE_NAME = 'nspira-it-collector-v58';
 const ASSETS = [
   './',
   './index.html',
@@ -24,6 +24,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // version.json is the update-check signal — it must always hit the network,
+  // never the cache, or the update check would just see its own stale copy
+  if(event.request.url.includes('version.json')){
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
