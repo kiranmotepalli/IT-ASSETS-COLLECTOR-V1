@@ -559,7 +559,7 @@ nav.tabbar{
         already on this device are skipped automatically, so restoring the same file twice
         won't create duplicates.
       </p>
-      <input type="file" id="restoreFileInput" accept=".csv" style="display:none;">
+      <input type="file" id="restoreFileInput" accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel,text/plain,*/*" style="display:none;">
       <button class="btn ghost" id="restoreBtn">📥 Restore from CSV</button>
       <div class="hint" id="restoreStatus" style="display:none;"></div>
     </div>
@@ -2586,7 +2586,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v63';
+const APP_VERSION = 'nspira-it-collector-v64';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
