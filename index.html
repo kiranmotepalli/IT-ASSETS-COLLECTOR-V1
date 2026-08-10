@@ -517,7 +517,7 @@ nav.tabbar{
       <div class="section-title">Export collected data</div>
       <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">
         Exports entries on this device as a CSV in the exact column format ASSETLINE expects
-        (Branch, Floor, Room / Area, Asset Category, Asset Name, Make, Model, Serial No, Quantity, Status, Remarks, Global ID, Employee Name, Employee Phone, Processor, RAM (GB), RAM Version, Storage (GB), Storage Type, Keyboard Qty, Mouse Qty, NVR/DVR Storage, GPS Location).
+        (Branch, Floor, Room / Area, Asset Category, Asset Name, Make, Model, Serial No, Quantity, Status, Remarks, Global ID, Employee Name, Employee Phone, Processor, RAM, Storage (GB), Storage Type, Keyboard Qty, Mouse Qty, NVR/DVR Storage, GPS Location).
         Share the file over WhatsApp / email / Drive, or upload it straight into the ASSETLINE web app's
         Import / Merge tab.
       </p>
@@ -2176,12 +2176,13 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const branch = document.getElementById('exportBranchFilter').value;
   const rows = branch ? ENTRIES.filter(e=> e.branch === branch) : ENTRIES;
   if(rows.length === 0){ showToast('No entries to export for this filter', true); return; }
-  const headers = ['Branch','Floor','Room / Area','Asset Category','Asset Name','Make','Model','Serial No','Quantity','Status','Remarks','Global ID','Employee Name','Employee Phone','Processor','RAM (GB)','RAM Version','Storage (GB)','Storage Type','Keyboard Qty','Mouse Qty','NVR/DVR Storage','GPS Location'];
+  const headers = ['Branch','Floor','Room / Area','Asset Category','Asset Name','Make','Model','Serial No','Quantity','Status','Remarks','Global ID','Employee Name','Employee Phone','Processor','RAM','Storage (GB)','Storage Type','Keyboard Qty','Mouse Qty','NVR/DVR Storage','GPS Location'];
   const lines = [headers.join(',')];
   // export oldest-first so it reads naturally
   [...rows].reverse().forEach(e=>{
     const gps = (e.geoLat!=null && e.geoLng!=null) ? `${e.geoLat}, ${e.geoLng}` : '';
-    lines.push([e.branch,e.floor,e.room,e.category,e.name,e.make,e.model,e.serial,e.qty,e.status,e.remarks,e.globalId||'',e.empName||'',e.empPhone||'',e.processor||'',e.ramGb||'',e.ramVersion||'',e.storageGb||'',e.storageType||'',e.keyboardQty||'',e.mouseQty||'',e.nvrStorage||'',gps].map(csvEscape).join(','));
+    const ramCombined = e.ramGb ? (e.ramGb + 'GB' + (e.ramVersion ? ' ' + e.ramVersion : '')) : (e.ramVersion || '');
+    lines.push([e.branch,e.floor,e.room,e.category,e.name,e.make,e.model,e.serial,e.qty,e.status,e.remarks,e.globalId||'',e.empName||'',e.empPhone||'',e.processor||'',ramCombined,e.storageGb||'',e.storageType||'',e.keyboardQty||'',e.mouseQty||'',e.nvrStorage||'',gps].map(csvEscape).join(','));
   });
   const blob = new Blob([lines.join('\n')], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
