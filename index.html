@@ -329,18 +329,26 @@ nav.tabbar{
         </div>
       </div>
 
-      <div class="row2">
+      <div class="row2" id="categoryTypeRow">
         <div>
           <label>Category *</label>
           <select id="fCategory">
             <option value="">Select…</option>
           </select>
         </div>
-        <div style="position:relative;">
-          <label>Asset name *</label>
-          <input type="text" id="fName" placeholder="e.g. IP Dome Camera 2MP" autocomplete="off">
-          <div class="suggest-box" id="nameSuggestBox"></div>
+        <div id="cameraTypeGroup" style="display:none;">
+          <label>Camera Type</label>
+          <select id="fCameraType">
+            <option value="Analog">Analog</option>
+            <option value="IP">IP</option>
+          </select>
         </div>
+      </div>
+
+      <div style="position:relative;">
+        <label>Asset name *</label>
+        <input type="text" id="fName" placeholder="e.g. IP Dome Camera 2MP" autocomplete="off">
+        <div class="suggest-box" id="nameSuggestBox"></div>
       </div>
 
       <div class="row2" id="makeModelRow">
@@ -542,6 +550,20 @@ nav.tabbar{
       <button class="btn primary" id="exportBtn">↓ Export CSV (<span id="exportCount">0</span> entries)</button>
     </div>
     <div class="panel">
+      <div class="section-title">Restore from CSV</div>
+      <p style="font-size:12.5px;color:var(--text-dim);line-height:1.6;">
+        If this device's data ever gets cleared by accident, or you're setting up a fresh
+        phone, restore entries from a CSV you exported earlier — using the exact file this
+        app produces (this file's own export, not the main ASSETLINE app's). Restored entries
+        are added back as normal, fully editable entries. Rows that exactly match something
+        already on this device are skipped automatically, so restoring the same file twice
+        won't create duplicates.
+      </p>
+      <input type="file" id="restoreFileInput" accept=".csv" style="display:none;">
+      <button class="btn ghost" id="restoreBtn">📥 Restore from CSV</button>
+      <div class="hint" id="restoreStatus" style="display:none;"></div>
+    </div>
+    <div class="panel">
       <div class="section-title">Danger zone</div>
       <p style="font-size:12.5px;color:var(--text-dim);">Clears every entry saved on this device. Export first if you need a copy.</p>
       <button class="btn danger" id="clearBtn">Clear all entries</button>
@@ -709,13 +731,21 @@ const STATUSES = ["Working","Not Working","Under Repair","Sent to Vendor","Await
    and auto-fills Make + Model when a listed item is picked. Extend this
    object with more categories/items any time; keys must match CATEGORIES. */
 const CATALOG = {
-  "CCTV Camera": [
+  "CCTV Camera Analog": [
     { name: "Hikvision 2MP Dome Camera",   make: "Hikvision", model: "Dome" },
     { name: "Hikvision 2MP Bullet Camera", make: "Hikvision", model: "Bullet" },
     { name: "Prama 2MP Dome Camera",       make: "Prama",     model: "Dome" },
     { name: "Prama 2MP Bullet Camera",     make: "Prama",     model: "Bullet" },
     { name: "Dahua 2MP Dome Camera",       make: "Dahua",     model: "Dome" },
     { name: "Dahua 2MP Bullet Camera",     make: "Dahua",     model: "Bullet" }
+  ],
+  "CCTV Camera IP": [
+    { name: "IP Hikvision 2MP Dome Camera",   make: "Hikvision", model: "Dome" },
+    { name: "IP Hikvision 2MP Bullet Camera", make: "Hikvision", model: "Bullet" },
+    { name: "IP Prama 2MP Dome Camera",       make: "Prama",     model: "Dome" },
+    { name: "IP Prama 2MP Bullet Camera",     make: "Prama",     model: "Bullet" },
+    { name: "IP Dahua 2MP Dome Camera",       make: "Dahua",     model: "Dome" },
+    { name: "IP Dahua 2MP Bullet Camera",     make: "Dahua",     model: "Bullet" }
   ],
   "NVR": [
     { name: "Hikvision 32CH NVR", make: "Hikvision", model: "32CH NVR" },
@@ -1330,8 +1360,18 @@ function initSelects(){
    bolds the matched portion, so partial typing always finds the right preset. */
 let currentNameOptions = [];
 
+/* CCTV Camera has an Analog/IP sub-choice that changes which name preset
+   list applies — this resolves the actual CATALOG key to use. */
+function getEffectiveCatalogKey(category){
+  if(category === 'CCTV Camera'){
+    const type = document.getElementById('fCameraType').value;
+    return type === 'IP' ? 'CCTV Camera IP' : 'CCTV Camera Analog';
+  }
+  return category;
+}
+
 function populateNameSuggestions(category){
-  currentNameOptions = (CATALOG[category] || []).map(i=> i.name);
+  currentNameOptions = (CATALOG[getEffectiveCatalogKey(category)] || []).map(i=> i.name);
 }
 
 function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -1469,7 +1509,7 @@ document.getElementById('fMake').addEventListener('change', updateMakeDependentM
 function tryAutoFillFromCatalog(){
   const category = document.getElementById('fCategory').value;
   const typed = document.getElementById('fName').value.trim().toLowerCase();
-  const items = CATALOG[category] || [];
+  const items = CATALOG[getEffectiveCatalogKey(category)] || [];
   const match = items.find(i=> i.name.toLowerCase() === typed);
   if(match){
     document.getElementById('fMake').value = match.make;
@@ -1487,6 +1527,9 @@ function toggleSystemConfig(){
   const cat = document.getElementById('fCategory').value;
   const isThinClient = (cat === 'VCloudPoint/NComputing');
 
+  const isCctv = (cat === 'CCTV Camera');
+  document.getElementById('cameraTypeGroup').style.display = isCctv ? 'block' : 'none';
+  document.getElementById('categoryTypeRow').style.gridTemplateColumns = isCctv ? '1fr 1fr' : '1fr';
   document.getElementById('laptopSection').style.display = (cat === 'Laptop') ? 'block' : 'none';
   document.getElementById('systemConfigSection').style.display = (cat === 'System' || cat === 'Laptop' || cat === 'Server') ? 'block' : 'none';
   document.getElementById('accessoriesSection').style.display = (cat === 'System' || cat === 'Server' || isThinClient) ? 'block' : 'none';
@@ -1558,10 +1601,19 @@ document.getElementById('fCategory').addEventListener('change', ()=>{
   document.getElementById('fModel').value = '';
   document.getElementById('fSerial').value = '';
   document.getElementById('fSerialsBatch').value = '';
+  document.getElementById('fCameraType').value = 'Analog';
   populateNameSuggestions(document.getElementById('fCategory').value);
   updateFieldSuggestions(); // sets Make/Model suggestion lists (includes MAKE_SUGGESTIONS categories too)
   toggleSystemConfig(); // re-applies category-specific defaults, e.g. VCloudPoint's fixed name/model
   checkDuplicateSerial();
+});
+document.getElementById('fCameraType').addEventListener('change', ()=>{
+  // Analog/IP switch changes the whole Asset Name preset list — clear the
+  // stale selection so nothing from the other type carries over
+  document.getElementById('fName').value = '';
+  document.getElementById('fMake').value = '';
+  document.getElementById('fModel').value = '';
+  populateNameSuggestions(document.getElementById('fCategory').value);
 });
 document.getElementById('fName').addEventListener('input', ()=>{ tryAutoFillFromCatalog(); updateFieldSuggestions(); });
 document.getElementById('fName').addEventListener('change', ()=>{ tryAutoFillFromCatalog(); updateFieldSuggestions(); });
@@ -2273,6 +2325,170 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   showToast('CSV exported');
 });
 
+/* ===== Restore from CSV ===== */
+function parseCsvLine(line){
+  const result = []; let cur = ''; let inQuotes = false;
+  for(let i=0;i<line.length;i++){
+    const ch = line[i];
+    if(inQuotes){
+      if(ch === '"'){
+        if(line[i+1] === '"'){ cur += '"'; i++; }
+        else{ inQuotes = false; }
+      } else cur += ch;
+    } else {
+      if(ch === '"') inQuotes = true;
+      else if(ch === ','){ result.push(cur); cur = ''; }
+      else cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseCsvFile(text){
+  // handles quoted fields that contain literal newlines, not just simple line-splitting
+  const rows = []; let row = []; let cur = ''; let inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const ch = text[i];
+    if(inQuotes){
+      if(ch === '"'){
+        if(text[i+1] === '"'){ cur += '"'; i++; }
+        else{ inQuotes = false; }
+      } else cur += ch;
+    } else {
+      if(ch === '"') inQuotes = true;
+      else if(ch === ','){ row.push(cur); cur = ''; }
+      else if(ch === '\r'){ /* skip */ }
+      else if(ch === '\n'){ row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += ch;
+    }
+  }
+  if(cur.length > 0 || row.length > 0){ row.push(cur); rows.push(row); }
+  return rows.filter(r=> r.length > 1 || (r.length === 1 && r[0].trim() !== ''));
+}
+
+function restoreEntryKey(e){
+  return [e.branch,e.floor,e.room,e.category,e.name,e.model,e.serial].map(v=> String(v||'').toLowerCase().trim()).join('|');
+}
+
+document.getElementById('restoreBtn').addEventListener('click', ()=>{
+  document.getElementById('restoreFileInput').click();
+});
+
+document.getElementById('restoreFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+
+  const statusEl = document.getElementById('restoreStatus');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--text-faint)';
+  statusEl.textContent = 'Reading file…';
+
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    try{
+      const rows = parseCsvFile(evt.target.result);
+      if(rows.length < 2){
+        statusEl.style.color = 'var(--red)';
+        statusEl.textContent = 'No data rows found in that file.';
+        return;
+      }
+      const header = rows[0].map(h=> h.trim());
+      const idx = (name)=> header.indexOf(name);
+
+      const iBranch = idx('Branch'), iFloor = idx('Floor'), iRoom = idx('Room / Area'),
+            iCategory = idx('Asset Category'), iName = idx('Asset Name'), iMake = idx('Make'),
+            iModel = idx('Model'), iSerial = idx('Serial No'), iQty = idx('Quantity'),
+            iStatus = idx('Status'), iRemarks = idx('Remarks'), iGlobalId = idx('Global ID'),
+            iEmpName = idx('Employee Name'), iEmpPhone = idx('Employee Phone'), iProcessor = idx('Processor'),
+            iRam = idx('RAM'), iStorageGb = idx('Storage (GB)'), iStorageType = idx('Storage Type'),
+            iHddStorage = idx('HDD Storage'), iKbQty = idx('Keyboard Qty'), iMouseQty = idx('Mouse Qty'),
+            iNvrStorage = idx('NVR/DVR Storage'), iGps = idx('GPS Location');
+
+      if(iBranch === -1 || iCategory === -1 || iName === -1){
+        statusEl.style.color = 'var(--red)';
+        statusEl.textContent = 'This doesn\'t look like a file exported from this app — missing expected columns (Branch, Asset Category, Asset Name).';
+        return;
+      }
+
+      const existingKeys = new Set(ENTRIES.map(restoreEntryKey));
+      let added = 0, skipped = 0;
+
+      for(let r=1; r<rows.length; r++){
+        const cols = rows[r];
+        if(!cols || cols.every(c=> !c || !c.trim())) continue;
+        const branch = (cols[iBranch]||'').trim();
+        const name = (cols[iName]||'').trim();
+        const category = (cols[iCategory]||'').trim();
+        if(!branch || !name || !category) continue;
+
+        const ramRaw = (iRam>-1 ? cols[iRam] : '') || '';
+        const ramMatch = ramRaw.match(/^(\d+)\s*GB\s*(.*)$/i);
+        const ramGb = ramMatch ? ramMatch[1] : '';
+        const ramVersion = ramMatch ? ramMatch[2].trim() : (ramRaw && !/^\d/.test(ramRaw) ? ramRaw.trim() : '');
+
+        const gpsRaw = (iGps>-1 ? cols[iGps] : '') || '';
+        let geoLat = null, geoLng = null;
+        const gpsMatch = gpsRaw.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+        if(gpsMatch){ geoLat = parseFloat(gpsMatch[1]); geoLng = parseFloat(gpsMatch[2]); }
+
+        const entry = {
+          id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+          branch, category, name,
+          floor: (iFloor>-1 ? cols[iFloor] : '') || '-',
+          room: (iRoom>-1 ? cols[iRoom] : '') || '-',
+          make: (iMake>-1 ? cols[iMake] : '') || '-',
+          model: (iModel>-1 ? cols[iModel] : '') || '-',
+          serial: (iSerial>-1 ? cols[iSerial] : '') || '-',
+          qty: (iQty>-1 ? cols[iQty] : '') || '1',
+          status: (iStatus>-1 ? cols[iStatus] : '') || 'Working',
+          remarks: (iRemarks>-1 ? cols[iRemarks] : '') || '',
+          globalId: (iGlobalId>-1 ? cols[iGlobalId] : '') || '',
+          empName: (iEmpName>-1 ? cols[iEmpName] : '') || '',
+          empPhone: (iEmpPhone>-1 ? cols[iEmpPhone] : '') || '',
+          processor: (iProcessor>-1 ? cols[iProcessor] : '') || '',
+          ramGb, ramVersion,
+          storageGb: (iStorageGb>-1 ? cols[iStorageGb] : '') || '',
+          storageType: (iStorageType>-1 ? cols[iStorageType] : '') || '',
+          hddStorage: (iHddStorage>-1 ? cols[iHddStorage] : '') || '',
+          hasHdd: !!((iHddStorage>-1 ? cols[iHddStorage] : '')||'').trim(),
+          keyboardQty: (iKbQty>-1 ? cols[iKbQty] : '') || '',
+          mouseQty: (iMouseQty>-1 ? cols[iMouseQty] : '') || '',
+          hasKeyboard: !!((iKbQty>-1 ? cols[iKbQty] : '')||'').trim(),
+          hasMouse: !!((iMouseQty>-1 ? cols[iMouseQty] : '')||'').trim(),
+          nvrStorage: (iNvrStorage>-1 ? cols[iNvrStorage] : '') || '',
+          geoLat, geoLng, geoAcc: null,
+          ts: new Date().toISOString()
+        };
+
+        const key = restoreEntryKey(entry);
+        if(existingKeys.has(key)){ skipped++; continue; }
+        existingKeys.add(key);
+        ENTRIES.unshift(entry);
+        added++;
+      }
+
+      if(added > 0){
+        saveEntries();
+        refreshBranchList();
+        updateSyncBadge();
+        renderEntries();
+      }
+
+      statusEl.style.color = added > 0 ? 'var(--teal)' : 'var(--red)';
+      statusEl.textContent = added > 0
+        ? `Restored ${added} entr${added===1?'y':'ies'}${skipped ? ` · ${skipped} already on this device, skipped` : ''}.`
+        : `Nothing new to restore — all ${skipped} row(s) already exist on this device.`;
+      showToast(added > 0 ? `${added} entries restored` : 'Nothing new to restore');
+    }catch(err){
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = 'Could not read that file — make sure it\'s a CSV exported from this app.';
+    }
+  };
+  reader.readAsText(file);
+});
+
 document.getElementById('clearBtn').addEventListener('click', ()=>{
   if(!confirm('This deletes every entry saved on this device. Export a CSV first if you need a copy. Continue?')) return;
   ENTRIES = [];
@@ -2370,7 +2586,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v60';
+const APP_VERSION = 'nspira-it-collector-v63';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
