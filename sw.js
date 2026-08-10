@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nspira-it-collector-v45';
+const CACHE_NAME = 'nspira-it-collector-v53';
 const ASSETS = [
   './',
   './index.html',

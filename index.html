@@ -2341,10 +2341,34 @@ window.addEventListener('appinstalled', ()=>{
   document.getElementById('installBanner').classList.remove('show');
 });
 
-/* ===== Service worker (offline support) ===== */
+/* ===== Service worker (offline support + auto-update) ===== */
 if('serviceWorker' in navigator){
+  let refreshing = false;
+
+  // once a new service worker takes control, reload once to pick up the new
+  // files immediately — without this, an already-open app keeps running the
+  // old cached version even after a new one has been installed in the background
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    // updateViaCache:'none' stops the browser's own HTTP cache from serving a
+    // stale sw.js — without this, GitHub Pages' caching could delay update
+    // checks by hours even though the file on GitHub has already changed
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then((reg)=>{
+        // check for a newer sw.js immediately, and again every time the app
+        // is brought back to the foreground — this is what makes updates
+        // apply within a normal app open instead of needing to sit idle
+        reg.update().catch(()=>{});
+        document.addEventListener('visibilitychange', ()=>{
+          if(document.visibilityState === 'visible') reg.update().catch(()=>{});
+        });
+      })
+      .catch(()=>{});
   });
 }
 
