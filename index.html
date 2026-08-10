@@ -142,6 +142,16 @@ textarea{ min-height:60px; resize:vertical; }
 .kpi .val{ font-family:var(--mono); font-size:19px; font-weight:700; margin-top:4px; }
 
 .field-with-btn{ display:flex; gap:8px; }
+.suggest-box{
+  display:none; position:absolute; left:0; right:0; top:100%; margin-top:4px; z-index:30;
+  background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+  max-height:190px; overflow-y:auto; box-shadow:0 10px 26px -10px rgba(0,0,0,0.55);
+}
+.suggest-box.show{ display:block; }
+.suggest-item{ padding:11px 13px; font-size:14px; cursor:pointer; border-bottom:1px solid var(--border-soft); }
+.suggest-item:last-child{ border-bottom:none; }
+.suggest-item:active{ background:var(--panel-3); }
+.suggest-item b{ color:var(--amber); font-weight:700; }
 .accessory-row{ display:flex; gap:10px; }
 .accessory-item{ flex:1; display:flex; flex-direction:column; gap:7px; }
 .accessory-check{
@@ -162,7 +172,7 @@ textarea{ min-height:60px; resize:vertical; }
 .scan-btn:active{ border-color:var(--amber); }
 
 .scanner-overlay{
-  display:none; position:fixed; inset:0; background:rgba(6,7,10,0.92); z-index:150;
+  display:none; position:fixed; inset:0; background:rgba(6,7,10,0.92); z-index:170;
   align-items:center; justify-content:center; padding:16px;
 }
 .scanner-overlay.active{ display:flex; }
@@ -326,10 +336,10 @@ nav.tabbar{
             <option value="">Select…</option>
           </select>
         </div>
-        <div>
+        <div style="position:relative;">
           <label>Asset name *</label>
-          <input type="text" id="fName" list="nameList" placeholder="e.g. IP Dome Camera 2MP" autocomplete="off">
-          <datalist id="nameList"></datalist>
+          <input type="text" id="fName" placeholder="e.g. IP Dome Camera 2MP" autocomplete="off">
+          <div class="suggest-box" id="nameSuggestBox"></div>
         </div>
       </div>
 
@@ -407,6 +417,18 @@ nav.tabbar{
             <label>RAM (GB)</label>
             <input type="number" id="fRam" placeholder="e.g. 8" min="0">
           </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>RAM Version</label>
+            <select id="fRamVersion">
+              <option value="">Select…</option>
+              <option>DDR3</option>
+              <option>DDR4</option>
+              <option>DDR5</option>
+            </select>
+          </div>
+          <div></div>
         </div>
         <div class="row2">
           <div>
@@ -495,7 +517,7 @@ nav.tabbar{
       <div class="section-title">Export collected data</div>
       <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">
         Exports entries on this device as a CSV in the exact column format ASSETLINE expects
-        (Branch, Floor, Room / Area, Asset Category, Asset Name, Make, Model, Serial No, Quantity, Status, Remarks, Global ID, Employee Name, Employee Phone, Processor, RAM (GB), Storage (GB), Storage Type, Keyboard Qty, Mouse Qty, NVR/DVR Storage, GPS Location).
+        (Branch, Floor, Room / Area, Asset Category, Asset Name, Make, Model, Serial No, Quantity, Status, Remarks, Global ID, Employee Name, Employee Phone, Processor, RAM (GB), RAM Version, Storage (GB), Storage Type, Keyboard Qty, Mouse Qty, NVR/DVR Storage, GPS Location).
         Share the file over WhatsApp / email / Drive, or upload it straight into the ASSETLINE web app's
         Import / Merge tab.
       </p>
@@ -631,8 +653,8 @@ function saveEntries(){
   localStorage.setItem(STORE_KEY, JSON.stringify(ENTRIES));
 }
 
-const CATEGORIES = ["CCTV Camera","NVR","DVR","DVR SMPS","Network Switch","POE Switch","Router","Access Point","Rack",
-  "System","Laptop","VCloudPoint/NComputing","Monitor","Printer","Xerox Machine","Scanner","Biometric","Projector","TV Display","Audio",
+const CATEGORIES = ["CCTV Camera","NVR","DVR","DVR SMPS","Network Switch","POE Switch","Router","Access Point/Firewall","Rack",
+  "System","Laptop","VCloudPoint/NComputing","Monitor","Printer","Xerox Machine","Scanner/OMR","Biometric","Projector","TV Display","Audio",
   "Server","Interactive Panel","Other"];
 
 const STATUSES = ["Working","Not Working","Under Repair","Sent to Vendor","Awaiting Spare",
@@ -672,22 +694,13 @@ const CATALOG = {
     { name: "Speaker",   make: "", model: "" },
     { name: "Mic",       make: "", model: "" }
   ],
-  "Network Switch": [
-    { name: "8 Port",  make: "-", model: "8 Port" },
-    { name: "16 Port", make: "-", model: "16 Port" },
-    { name: "24 Port", make: "-", model: "24 Port" }
+  "Access Point/Firewall": [
+    { name: "Access Point", make: "", model: "" },
+    { name: "Firewall",     make: "", model: "" }
   ],
-  "POE Switch": [
-    { name: "8 Port",  make: "-", model: "8 Port" },
-    { name: "16 Port", make: "-", model: "16 Port" },
-    { name: "24 Port", make: "-", model: "24 Port" }
-  ],
-  "Rack": [
-    { name: "2U",  make: "-", model: "2U" },
-    { name: "4U",  make: "-", model: "4U" },
-    { name: "6U",  make: "-", model: "6U" },
-    { name: "9U",  make: "-", model: "9U" },
-    { name: "12U", make: "-", model: "12U" }
+  "Scanner/OMR": [
+    { name: "OMR Scanner", make: "", model: "" },
+    { name: "Doc Scanner", make: "", model: "" }
   ],
   "Printer": [
     { name: "HP LaserJet Pro MFP M329dw", make: "HP",    model: "LaserJet Pro MFP M329dw" },
@@ -705,14 +718,14 @@ const ROLE_KITS = {
     { category: "System",  label: "System",  accessories: true },
     { category: "Monitor", label: "Monitor" },
     { category: "Printer", label: "Printer" },
-    { category: "Scanner", label: "Scanner" },
+    { category: "Scanner/OMR", label: "Scanner" },
     { category: "Other",   label: "Others",  freeform: true }
   ],
   "Operator": [
     { category: "System",  label: "System",  accessories: true },
     { category: "Monitor", label: "Monitor" },
     { category: "Printer", label: "Printer" },
-    { category: "Scanner", label: "OMR Scanner", nameOverride: "OMR Scanner" },
+    { category: "Scanner/OMR", label: "OMR Scanner", nameOverride: "OMR Scanner" },
     { category: "Other",   label: "Others",  freeform: true }
   ],
   "Principal": [
@@ -832,6 +845,18 @@ function renderKitItems(role){
       </div>
       <div class="row2" style="margin-top:8px;">
         <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">RAM Version</label>
+          <select class="kit-item-ramversion" style="font-size:13px;padding:9px 10px;">
+            <option value="">Select…</option>
+            <option>DDR3</option>
+            <option>DDR4</option>
+            <option>DDR5</option>
+          </select>
+        </div>
+        <div></div>
+      </div>
+      <div class="row2" style="margin-top:8px;">
+        <div>
           <label style="font-size:10px;margin:0 0 4px 0;">Storage (GB)</label>
           <input type="text" class="kit-item-storage" placeholder="e.g. 256" list="kitStorageList" style="font-size:13px;padding:9px 10px;">
         </div>
@@ -881,6 +906,18 @@ function renderComputerLabItems(){
           <label style="font-size:10px;margin:0 0 4px 0;">RAM</label>
           <input type="text" id="labServerRam" list="kitRamList" placeholder="e.g. 16GB" style="font-size:13px;padding:9px 10px;">
         </div>
+      </div>
+      <div class="row2" style="margin-top:8px;">
+        <div>
+          <label style="font-size:10px;margin:0 0 4px 0;">RAM Version</label>
+          <select id="labServerRamVersion" style="font-size:13px;padding:9px 10px;">
+            <option value="">Select…</option>
+            <option>DDR3</option>
+            <option>DDR4</option>
+            <option>DDR5</option>
+          </select>
+        </div>
+        <div></div>
       </div>
       <div class="row2" style="margin-top:8px;">
         <div>
@@ -1049,10 +1086,11 @@ function saveComputerLabKit(branch, floor, room, empName){
     const qty = document.getElementById('labServerQty').value || '1';
     const processor = document.getElementById('labServerProcessor').value.trim();
     const ramGb = document.getElementById('labServerRam').value.trim();
+    const ramVersion = document.getElementById('labServerRamVersion').value;
     const storageGb = document.getElementById('labServerStorage').value.trim();
     const storageType = document.getElementById('labServerStorageType').value;
     const serialsText = document.getElementById('labServerSerials').value;
-    pushMultiOrQty({ category: 'System', name: 'Server', make, model, processor, ramGb, storageGb, storageType }, qty, serialsText);
+    pushMultiOrQty({ category: 'System', name: 'Server', make, model, processor, ramGb, ramVersion, storageGb, storageType }, qty, serialsText);
   }
 
   // VCloudPoint / NComputing
@@ -1168,6 +1206,7 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
 
     const processorEl = row.querySelector('.kit-item-processor');
     const ramEl = row.querySelector('.kit-item-ram');
+    const ramVersionEl = row.querySelector('.kit-item-ramversion');
     const storageEl = row.querySelector('.kit-item-storage');
     const storageTypeEl = row.querySelector('.kit-item-storagetype');
 
@@ -1180,6 +1219,7 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
       globalId: '', empName: isSystem ? empName : '', empPhone: '',
       processor: (isSystem && processorEl) ? processorEl.value.trim() : '',
       ramGb: (isSystem && ramEl) ? ramEl.value.trim() : '',
+      ramVersion: (isSystem && ramVersionEl) ? ramVersionEl.value : '',
       storageGb: (isSystem && storageEl) ? storageEl.value.trim() : '',
       storageType: (isSystem && storageTypeEl) ? storageTypeEl.value : '',
       hasKeyboard: !!item.accessories, hasMouse: !!item.accessories,
@@ -1213,51 +1253,114 @@ function initSelects(){
   document.getElementById('fStatus').innerHTML = STATUSES.map(s=>`<option ${s==='Working'?'selected':''}>${s}</option>`).join('');
 }
 
+/* Asset Name autocomplete — a custom dropdown instead of the native <datalist>,
+   which filters unreliably on Android Chrome (e.g. typing "8ch" often failed to
+   surface "8CH DVR"). This does a plain case-insensitive substring match and
+   bolds the matched portion, so partial typing always finds the right preset. */
+let currentNameOptions = [];
+
 function populateNameSuggestions(category){
-  const items = CATALOG[category] || [];
-  document.getElementById('nameList').innerHTML = items.map(i=>`<option value="${escapeHtml(i.name)}">`).join('');
+  currentNameOptions = (CATALOG[category] || []).map(i=> i.name);
 }
 
+function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function renderNameSuggestBox(){
+  const box = document.getElementById('nameSuggestBox');
+  const typed = document.getElementById('fName').value.trim();
+  if(currentNameOptions.length === 0){ box.classList.remove('show'); box.innerHTML=''; return; }
+
+  const query = typed.toLowerCase();
+  const matches = query
+    ? currentNameOptions.filter(n=> n.toLowerCase().includes(query))
+    : currentNameOptions; // empty field on focus → show the full preset list
+
+  if(matches.length === 0){ box.classList.remove('show'); box.innerHTML=''; return; }
+
+  box.innerHTML = matches.map(n=>{
+    let display = escapeHtml(n);
+    if(query){
+      const idx = n.toLowerCase().indexOf(query);
+      if(idx !== -1){
+        display = escapeHtml(n.slice(0,idx)) + '<b>' + escapeHtml(n.slice(idx, idx+query.length)) + '</b>' + escapeHtml(n.slice(idx+query.length));
+      }
+    }
+    return `<div class="suggest-item" data-val="${escapeHtml(n)}">${display}</div>`;
+  }).join('');
+  box.classList.add('show');
+}
+
+function hideNameSuggestBox(){
+  document.getElementById('nameSuggestBox').classList.remove('show');
+}
+
+document.getElementById('fName').addEventListener('focus', renderNameSuggestBox);
+document.getElementById('fName').addEventListener('input', renderNameSuggestBox);
+document.getElementById('fName').addEventListener('blur', ()=>{
+  // small delay so a tap on a suggestion registers before the box disappears
+  setTimeout(hideNameSuggestBox, 150);
+});
+document.getElementById('nameSuggestBox').addEventListener('mousedown', (e)=>{
+  const item = e.target.closest('.suggest-item');
+  if(!item) return;
+  e.preventDefault(); // keep focus so blur doesn't fire before we set the value
+  document.getElementById('fName').value = item.dataset.val;
+  hideNameSuggestBox();
+  tryAutoFillFromCatalog();
+  updateFieldSuggestions();
+});
+
 /* Make suggestions per category, shown as datalist options on the Make field.
-   For Audio, these are overridden per sub-type (Amplifier/Speaker/Mic) by
-   updateFieldSuggestions() below. */
+   For categories with Asset-Name-dependent options (Audio, Access Point/Firewall,
+   Scanner/OMR), these are overridden by NAME_OPTIONS via updateFieldSuggestions(). */
 const MAKE_SUGGESTIONS = {
   "Interactive Panel": ["Viewsonic","Logic","Evota","Gladwin","Teachmint","Crowntouch","Newline"],
   "TV Display": ["LG","Panasonic","Samsung"],
-  "Projector": ["BenQ","Hitachi","Panasonic","Viewsonic"]
+  "Projector": ["BenQ","Hitachi","Panasonic","Viewsonic"],
+  "Network Switch": ["Digisol","D-Link","TP-Link","Hikvision","CP-Plus"],
+  "POE Switch": ["Digisol","D-Link","TP-Link","Hikvision","CP-Plus"],
+  "Router": ["TP-Link","D-Link","Netgear","Cisco"],
+  "Monitor": ["HP","Lenovo","Acer","Dell"]
 };
 
 /* Model suggestions per category, shown as datalist options on the Model field. */
 const MODEL_SUGGESTIONS = {
-  "TV Display": ["32 Inch","55 Inch","65 Inch","98 Inch"]
+  "TV Display": ["32 Inch","55 Inch","65 Inch","98 Inch"],
+  "Network Switch": ["8 Port","16 Port","24 Port"],
+  "POE Switch": ["8 Port","16 Port","24 Port"],
+  "Rack": ["2U","4U","6U","9U","12U"],
+  "Monitor": ["14 Inch","18.5 Inch","19.5 Inch"]
 };
 
-/* Audio sub-type presets: which Make/Model options to suggest once the person
-   picks Amplifier / Speaker / Mic as the Asset Name under the Audio category.
-   Everything here is still a free-text field underneath — these are just
-   tap-to-fill suggestions, manual entry always works too. */
-const AUDIO_OPTIONS = {
-  "Amplifier": {
-    makes: ["Ahuja"],
-    models: ["SSB45EM","SSB250EM","SSB350EM","SSB5000EM","SSB7000EM","SSB10000EM"]
+/* Asset-Name-dependent Make/Model presets — once a specific name is picked
+   under these categories, Make (and sometimes Model) suggestions narrow to
+   match. Everything is still free text underneath — manual entry always works. */
+const NAME_OPTIONS = {
+  "Audio": {
+    "Amplifier": { makes: ["Ahuja"], models: ["SSB45EM","SSB250EM","SSB350EM","SSB5000EM","SSB7000EM","SSB10000EM"] },
+    "Speaker":   { makes: ["Ahuja"], models: ["400T","6305","SRX250"] },
+    "Mic":       { makes: ["Ahuja"], models: ["Wired Mic","Wireless Mic","Table Mic"] }
   },
-  "Speaker": {
-    makes: ["Ahuja"],
-    models: ["400T","6305","SRX250"]
+  "Access Point/Firewall": {
+    "Access Point": { makes: ["Quantum","Ruckus"], models: [] },
+    "Firewall":      { makes: [], models: [] }
   },
-  "Mic": {
-    makes: ["Ahuja"],
-    models: ["Wired Mic","Wireless Mic","Table Mic"]
+  "Scanner/OMR": {
+    "OMR Scanner": { makes: ["Oases","Fujitsu"], models: [] },
+    "Doc Scanner": { makes: ["Canon","Epson"],   models: [] }
   }
 };
+
+/* Access Point: Model auto-fills once a specific Make is chosen — one model per make. */
+const AP_MODEL_BY_MAKE = { "Quantum": "QN-I-200", "Ruckus": "R650" };
 
 function updateFieldSuggestions(){
   const category = document.getElementById('fCategory').value;
   const name = document.getElementById('fName').value.trim();
-  const audioOpts = (category === 'Audio') ? AUDIO_OPTIONS[name] : null;
+  const nameOpts = (NAME_OPTIONS[category] && NAME_OPTIONS[category][name]) ? NAME_OPTIONS[category][name] : null;
 
-  const makes = audioOpts ? audioOpts.makes : (MAKE_SUGGESTIONS[category] || []);
-  const models = audioOpts ? audioOpts.models : (MODEL_SUGGESTIONS[category] || []);
+  const makes = nameOpts ? nameOpts.makes : (MAKE_SUGGESTIONS[category] || []);
+  const models = nameOpts ? nameOpts.models : (MODEL_SUGGESTIONS[category] || []);
 
   document.getElementById('makeSuggestList').innerHTML = makes.map(m=>`<option value="${escapeHtml(m)}">`).join('');
   document.getElementById('modelSuggestList').innerHTML = models.map(m=>`<option value="${escapeHtml(m)}">`).join('');
@@ -1267,6 +1370,17 @@ function updateFieldSuggestions(){
   document.getElementById('ncBatchGroup').style.display = showNcBatch ? 'block' : 'none';
   if(!showNcBatch) document.getElementById('fNcBatch').value = '';
 }
+
+function updateAccessPointModel(){
+  const category = document.getElementById('fCategory').value;
+  if(category !== 'Access Point/Firewall') return;
+  const make = document.getElementById('fMake').value.trim();
+  if(AP_MODEL_BY_MAKE[make]){
+    document.getElementById('fModel').value = AP_MODEL_BY_MAKE[make];
+  }
+}
+document.getElementById('fMake').addEventListener('input', updateAccessPointModel);
+document.getElementById('fMake').addEventListener('change', updateAccessPointModel);
 
 function tryAutoFillFromCatalog(){
   const category = document.getElementById('fCategory').value;
@@ -1337,6 +1451,22 @@ function toggleSystemConfig(){
     document.getElementById('fName').value = 'PROJECTOR';
   } else if(cat === 'Biometric'){
     document.getElementById('fName').value = 'BIOMETRIC';
+  } else if(cat === 'Network Switch'){
+    document.getElementById('fName').value = 'Network Switch';
+  } else if(cat === 'POE Switch'){
+    document.getElementById('fName').value = 'POE Switch';
+  } else if(cat === 'Router'){
+    document.getElementById('fName').value = 'Router';
+  } else if(cat === 'Rack'){
+    document.getElementById('fName').value = 'Rack';
+  } else if(cat === 'System'){
+    document.getElementById('fName').value = 'CPU';
+  } else if(cat === 'Laptop'){
+    document.getElementById('fName').value = 'Laptop';
+  } else if(cat === 'Monitor'){
+    document.getElementById('fName').value = 'Monitor';
+  } else if(cat === 'Server'){
+    document.getElementById('fName').value = 'Server';
   }
   // VCloudPoint/NComputing: Asset Name is picked from the "VCLOUDPOINT" /
   // "2015 BELOW" / "2015 ABOVE" suggestions (populated by populateNameSuggestions
@@ -1690,6 +1820,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     empPhone: isLaptop ? document.getElementById('fEmpPhone').value.trim() : '',
     processor: hasHwConfig ? document.getElementById('fProcessor').value.trim() : '',
     ramGb: hasHwConfig ? document.getElementById('fRam').value.trim() : '',
+    ramVersion: hasHwConfig ? document.getElementById('fRamVersion').value : '',
     storageGb: hasHwConfig ? document.getElementById('fStorage').value.trim() : '',
     storageType: hasHwConfig ? document.getElementById('fStorageType').value : '',
     hasKeyboard: hasAccessories ? document.getElementById('fHasKeyboard').checked : false,
@@ -1783,6 +1914,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
   document.getElementById('fEmpPhone').value = '';
   document.getElementById('fProcessor').value = '';
   document.getElementById('fRam').value = '';
+  document.getElementById('fRamVersion').value = '';
   document.getElementById('fStorage').value = '';
   document.getElementById('fStorageType').value = '';
   document.getElementById('fHasKeyboard').checked = false;
@@ -1822,6 +1954,7 @@ document.getElementById('clearBtnForm').addEventListener('click', ()=>{
   document.getElementById('fEmpPhone').value = '';
   document.getElementById('fProcessor').value = '';
   document.getElementById('fRam').value = '';
+  document.getElementById('fRamVersion').value = '';
   document.getElementById('fStorage').value = '';
   document.getElementById('fStorageType').value = '';
   document.getElementById('fHasKeyboard').checked = false;
@@ -1856,7 +1989,7 @@ function entryCardHtml(e, showBranchTag){
     </div>
     ${e.remarks ? `<div class="entry-meta" style="margin-top:6px;">📝 ${escapeHtml(e.remarks)}</div>` : ''}
     ${(e.globalId || e.empName || e.empPhone) ? `<div class="entry-meta" style="margin-top:6px;">🪪 ${e.globalId?escapeHtml(e.globalId):'Global ID —'} · ${e.empName?escapeHtml(e.empName):'—'}${e.empPhone?' · '+escapeHtml(e.empPhone):''}</div>` : ''}
-    ${(e.processor || e.ramGb || e.storageGb || e.storageType) ? `<div class="entry-meta" style="margin-top:6px;">🖥️ ${escapeHtml(e.processor||'—')} · ${e.ramGb?escapeHtml(e.ramGb)+'GB RAM':'RAM —'} · ${e.storageGb?escapeHtml(e.storageGb)+'GB '+escapeHtml(e.storageType||''):'Storage —'}</div>` : ''}
+    ${(e.processor || e.ramGb || e.storageGb || e.storageType) ? `<div class="entry-meta" style="margin-top:6px;">🖥️ ${escapeHtml(e.processor||'—')} · ${e.ramGb?escapeHtml(e.ramGb)+'GB'+(e.ramVersion?' '+escapeHtml(e.ramVersion):'')+' RAM':'RAM —'} · ${e.storageGb?escapeHtml(e.storageGb)+'GB '+escapeHtml(e.storageType||''):'Storage —'}</div>` : ''}
     ${(e.hasKeyboard || e.hasMouse) ? `<div class="entry-meta" style="margin-top:6px;">${e.hasKeyboard?'⌨️ Keyboard x'+escapeHtml(e.keyboardQty||'1'):''}${(e.hasKeyboard&&e.hasMouse)?' · ':''}${e.hasMouse?'🖱️ Mouse x'+escapeHtml(e.mouseQty||'1'):''}</div>` : ''}
     ${e.nvrStorage ? `<div class="entry-meta" style="margin-top:6px;">💾 Storage: ${escapeHtml(e.nvrStorage)}</div>` : ''}
     ${(e.geoLat!=null && e.geoLng!=null) ? `<div class="entry-meta" style="margin-top:4px;"><a href="https://maps.google.com/?q=${e.geoLat},${e.geoLng}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:none;">📍 View location on map ${e.geoAcc?('(±'+e.geoAcc+'m)'):''}</a></div>` : ''}
@@ -1973,6 +2106,7 @@ function editEntry(id){
   document.getElementById('fEmpPhone').value = e.empPhone || '';
   document.getElementById('fProcessor').value = e.processor || '';
   document.getElementById('fRam').value = e.ramGb || '';
+  document.getElementById('fRamVersion').value = e.ramVersion || '';
   document.getElementById('fStorage').value = e.storageGb || '';
   document.getElementById('fStorageType').value = e.storageType || '';
 
@@ -2042,12 +2176,12 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const branch = document.getElementById('exportBranchFilter').value;
   const rows = branch ? ENTRIES.filter(e=> e.branch === branch) : ENTRIES;
   if(rows.length === 0){ showToast('No entries to export for this filter', true); return; }
-  const headers = ['Branch','Floor','Room / Area','Asset Category','Asset Name','Make','Model','Serial No','Quantity','Status','Remarks','Global ID','Employee Name','Employee Phone','Processor','RAM (GB)','Storage (GB)','Storage Type','Keyboard Qty','Mouse Qty','NVR/DVR Storage','GPS Location'];
+  const headers = ['Branch','Floor','Room / Area','Asset Category','Asset Name','Make','Model','Serial No','Quantity','Status','Remarks','Global ID','Employee Name','Employee Phone','Processor','RAM (GB)','RAM Version','Storage (GB)','Storage Type','Keyboard Qty','Mouse Qty','NVR/DVR Storage','GPS Location'];
   const lines = [headers.join(',')];
   // export oldest-first so it reads naturally
   [...rows].reverse().forEach(e=>{
     const gps = (e.geoLat!=null && e.geoLng!=null) ? `${e.geoLat}, ${e.geoLng}` : '';
-    lines.push([e.branch,e.floor,e.room,e.category,e.name,e.make,e.model,e.serial,e.qty,e.status,e.remarks,e.globalId||'',e.empName||'',e.empPhone||'',e.processor||'',e.ramGb||'',e.storageGb||'',e.storageType||'',e.keyboardQty||'',e.mouseQty||'',e.nvrStorage||'',gps].map(csvEscape).join(','));
+    lines.push([e.branch,e.floor,e.room,e.category,e.name,e.make,e.model,e.serial,e.qty,e.status,e.remarks,e.globalId||'',e.empName||'',e.empPhone||'',e.processor||'',e.ramGb||'',e.ramVersion||'',e.storageGb||'',e.storageType||'',e.keyboardQty||'',e.mouseQty||'',e.nvrStorage||'',gps].map(csvEscape).join(','));
   });
   const blob = new Blob([lines.join('\n')], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
