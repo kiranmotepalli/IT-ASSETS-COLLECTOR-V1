@@ -432,17 +432,32 @@ nav.tabbar{
         </div>
         <div class="row2">
           <div>
-            <label>Storage (GB)</label>
+            <label>Storage (GB) — SSD/NVMe</label>
             <input type="number" id="fStorage" placeholder="e.g. 256" min="0">
           </div>
           <div>
             <label>Storage Type</label>
             <select id="fStorageType">
               <option value="">Select…</option>
-              <option>HDD</option>
               <option>SSD</option>
+              <option>NVMe</option>
             </select>
           </div>
+        </div>
+        <div class="accessory-row" style="margin-top:8px;">
+          <label class="accessory-check" style="flex:1;">
+            <input type="checkbox" id="fHasHdd" onchange="toggleHddField()">
+            <span>💽 Additional HDD present</span>
+          </label>
+        </div>
+        <div id="hddStorageGroup" style="display:none; margin-top:8px;">
+          <label>HDD Storage</label>
+          <input type="text" id="fHddStorage" list="hddStorageList" placeholder="e.g. 1TB">
+          <datalist id="hddStorageList">
+            <option value="500GB">
+            <option value="1TB">
+            <option value="2TB">
+          </datalist>
         </div>
       </div>
 
@@ -517,7 +532,7 @@ nav.tabbar{
       <div class="section-title">Export collected data</div>
       <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">
         Exports entries on this device as a CSV in the exact column format ASSETLINE expects
-        (Branch, Floor, Room / Area, Asset Category, Asset Name, Make, Model, Serial No, Quantity, Status, Remarks, Global ID, Employee Name, Employee Phone, Processor, RAM, Storage (GB), Storage Type, Keyboard Qty, Mouse Qty, NVR/DVR Storage, GPS Location).
+        (Branch, Floor, Room / Area, Asset Category, Asset Name, Make, Model, Serial No, Quantity, Status, Remarks, Global ID, Employee Name, Employee Phone, Processor, RAM, Storage (GB), Storage Type, HDD Storage, Keyboard Qty, Mouse Qty, NVR/DVR Storage, GPS Location).
         Share the file over WhatsApp / email / Drive, or upload it straight into the ASSETLINE web app's
         Import / Merge tab.
       </p>
@@ -857,17 +872,27 @@ function renderKitItems(role){
       </div>
       <div class="row2" style="margin-top:8px;">
         <div>
-          <label style="font-size:10px;margin:0 0 4px 0;">Storage (GB)</label>
+          <label style="font-size:10px;margin:0 0 4px 0;">Storage (GB) — SSD/NVMe</label>
           <input type="text" class="kit-item-storage" placeholder="e.g. 256" list="kitStorageList" style="font-size:13px;padding:9px 10px;">
         </div>
         <div>
           <label style="font-size:10px;margin:0 0 4px 0;">Storage Type</label>
           <select class="kit-item-storagetype" style="font-size:13px;padding:9px 10px;">
             <option value="">Select…</option>
-            <option>HDD</option>
             <option>SSD</option>
+            <option>NVMe</option>
           </select>
         </div>
+      </div>
+      <div class="accessory-row" style="margin-top:8px;">
+        <label class="accessory-check" style="flex:1;">
+          <input type="checkbox" class="kit-item-hashdd" onchange="this.closest('.kit-item').querySelector('.kit-item-hdd-group').style.display = this.checked ? 'block' : 'none';">
+          <span>💽 Additional HDD present</span>
+        </label>
+      </div>
+      <div class="kit-item-hdd-group" style="display:none; margin-top:8px;">
+        <label style="font-size:10px;margin:0 0 4px 0;">HDD Storage</label>
+        <input type="text" class="kit-item-hddstorage" list="hddStorageList" placeholder="e.g. 1TB" style="font-size:13px;padding:9px 10px;">
       </div>` : ''}
     </div>`;
   }).join('');
@@ -921,17 +946,27 @@ function renderComputerLabItems(){
       </div>
       <div class="row2" style="margin-top:8px;">
         <div>
-          <label style="font-size:10px;margin:0 0 4px 0;">Storage (GB)</label>
+          <label style="font-size:10px;margin:0 0 4px 0;">Storage (GB) — SSD/NVMe</label>
           <input type="text" id="labServerStorage" list="kitStorageList" placeholder="e.g. 512" style="font-size:13px;padding:9px 10px;">
         </div>
         <div>
           <label style="font-size:10px;margin:0 0 4px 0;">Storage Type</label>
           <select id="labServerStorageType" style="font-size:13px;padding:9px 10px;">
             <option value="">Select…</option>
-            <option>HDD</option>
             <option>SSD</option>
+            <option>NVMe</option>
           </select>
         </div>
+      </div>
+      <div class="accessory-row" style="margin-top:8px;">
+        <label class="accessory-check" style="flex:1;">
+          <input type="checkbox" id="labServerHasHdd" onchange="document.getElementById('labServerHddGroup').style.display = this.checked ? 'block' : 'none';">
+          <span>💽 Additional HDD present</span>
+        </label>
+      </div>
+      <div id="labServerHddGroup" style="display:none; margin-top:8px;">
+        <label style="font-size:10px;margin:0 0 4px 0;">HDD Storage</label>
+        <input type="text" id="labServerHddStorage" list="hddStorageList" placeholder="e.g. 1TB" style="font-size:13px;padding:9px 10px;">
       </div>
       <div style="margin-top:8px;">
         <label style="font-size:10px;margin:0 0 4px 0;">Serial Numbers <span style="font-weight:400;color:var(--text-faint);">(one per line, or scan — each becomes its own entry)</span></label>
@@ -1089,8 +1124,10 @@ function saveComputerLabKit(branch, floor, room, empName){
     const ramVersion = document.getElementById('labServerRamVersion').value;
     const storageGb = document.getElementById('labServerStorage').value.trim();
     const storageType = document.getElementById('labServerStorageType').value;
+    const hasHdd = document.getElementById('labServerHasHdd').checked;
+    const hddStorage = hasHdd ? document.getElementById('labServerHddStorage').value.trim() : '';
     const serialsText = document.getElementById('labServerSerials').value;
-    pushMultiOrQty({ category: 'System', name: 'Server', make, model, processor, ramGb, ramVersion, storageGb, storageType }, qty, serialsText);
+    pushMultiOrQty({ category: 'System', name: 'Server', make, model, processor, ramGb, ramVersion, storageGb, storageType, hasHdd, hddStorage }, qty, serialsText);
   }
 
   // VCloudPoint / NComputing
@@ -1209,6 +1246,8 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
     const ramVersionEl = row.querySelector('.kit-item-ramversion');
     const storageEl = row.querySelector('.kit-item-storage');
     const storageTypeEl = row.querySelector('.kit-item-storagetype');
+    const hasHddEl = row.querySelector('.kit-item-hashdd');
+    const hddStorageEl = row.querySelector('.kit-item-hddstorage');
 
     ENTRIES.unshift({
       id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
@@ -1222,6 +1261,8 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
       ramVersion: (isSystem && ramVersionEl) ? ramVersionEl.value : '',
       storageGb: (isSystem && storageEl) ? storageEl.value.trim() : '',
       storageType: (isSystem && storageTypeEl) ? storageTypeEl.value : '',
+      hasHdd: (isSystem && hasHddEl) ? hasHddEl.checked : false,
+      hddStorage: (isSystem && hasHddEl && hasHddEl.checked && hddStorageEl) ? hddStorageEl.value.trim() : '',
       hasKeyboard: !!item.accessories, hasMouse: !!item.accessories,
       keyboardQty: item.accessories ? qty : '', mouseQty: item.accessories ? qty : '',
       nvrStorage: '',
@@ -1391,6 +1432,12 @@ function tryAutoFillFromCatalog(){
     document.getElementById('fMake').value = match.make;
     document.getElementById('fModel').value = match.model;
   }
+}
+
+function toggleHddField(){
+  const checked = document.getElementById('fHasHdd').checked;
+  document.getElementById('hddStorageGroup').style.display = checked ? 'block' : 'none';
+  if(!checked) document.getElementById('fHddStorage').value = '';
 }
 
 function toggleAccessoryQty(which){
@@ -1824,6 +1871,8 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     ramVersion: hasHwConfig ? document.getElementById('fRamVersion').value : '',
     storageGb: hasHwConfig ? document.getElementById('fStorage').value.trim() : '',
     storageType: hasHwConfig ? document.getElementById('fStorageType').value : '',
+    hasHdd: hasHwConfig ? document.getElementById('fHasHdd').checked : false,
+    hddStorage: (hasHwConfig && document.getElementById('fHasHdd').checked) ? document.getElementById('fHddStorage').value.trim() : '',
     hasKeyboard: hasAccessories ? document.getElementById('fHasKeyboard').checked : false,
     hasMouse: hasAccessories ? document.getElementById('fHasMouse').checked : false,
     keyboardQty: (hasAccessories && document.getElementById('fHasKeyboard').checked) ? (document.getElementById('fKeyboardQty').value || '1') : '',
@@ -1918,6 +1967,9 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
   document.getElementById('fRamVersion').value = '';
   document.getElementById('fStorage').value = '';
   document.getElementById('fStorageType').value = '';
+  document.getElementById('fHasHdd').checked = false;
+  document.getElementById('fHddStorage').value = '';
+  document.getElementById('hddStorageGroup').style.display = 'none';
   document.getElementById('fHasKeyboard').checked = false;
   document.getElementById('fHasMouse').checked = false;
   document.getElementById('fKeyboardQty').value = '1';
@@ -1958,6 +2010,9 @@ document.getElementById('clearBtnForm').addEventListener('click', ()=>{
   document.getElementById('fRamVersion').value = '';
   document.getElementById('fStorage').value = '';
   document.getElementById('fStorageType').value = '';
+  document.getElementById('fHasHdd').checked = false;
+  document.getElementById('fHddStorage').value = '';
+  document.getElementById('hddStorageGroup').style.display = 'none';
   document.getElementById('fHasKeyboard').checked = false;
   document.getElementById('fHasMouse').checked = false;
   document.getElementById('fKeyboardQty').value = '1';
@@ -1990,7 +2045,7 @@ function entryCardHtml(e, showBranchTag){
     </div>
     ${e.remarks ? `<div class="entry-meta" style="margin-top:6px;">📝 ${escapeHtml(e.remarks)}</div>` : ''}
     ${(e.globalId || e.empName || e.empPhone) ? `<div class="entry-meta" style="margin-top:6px;">🪪 ${e.globalId?escapeHtml(e.globalId):'Global ID —'} · ${e.empName?escapeHtml(e.empName):'—'}${e.empPhone?' · '+escapeHtml(e.empPhone):''}</div>` : ''}
-    ${(e.processor || e.ramGb || e.storageGb || e.storageType) ? `<div class="entry-meta" style="margin-top:6px;">🖥️ ${escapeHtml(e.processor||'—')} · ${e.ramGb?escapeHtml(e.ramGb)+'GB'+(e.ramVersion?' '+escapeHtml(e.ramVersion):'')+' RAM':'RAM —'} · ${e.storageGb?escapeHtml(e.storageGb)+'GB '+escapeHtml(e.storageType||''):'Storage —'}</div>` : ''}
+    ${(e.processor || e.ramGb || e.storageGb || e.storageType) ? `<div class="entry-meta" style="margin-top:6px;">🖥️ ${escapeHtml(e.processor||'—')} · ${e.ramGb?escapeHtml(e.ramGb)+'GB'+(e.ramVersion?' '+escapeHtml(e.ramVersion):'')+' RAM':'RAM —'} · ${e.storageGb?escapeHtml(e.storageGb)+'GB '+escapeHtml(e.storageType||''):'Storage —'}${e.hasHdd?' · +HDD '+escapeHtml(e.hddStorage||''):''}</div>` : ''}
     ${(e.hasKeyboard || e.hasMouse) ? `<div class="entry-meta" style="margin-top:6px;">${e.hasKeyboard?'⌨️ Keyboard x'+escapeHtml(e.keyboardQty||'1'):''}${(e.hasKeyboard&&e.hasMouse)?' · ':''}${e.hasMouse?'🖱️ Mouse x'+escapeHtml(e.mouseQty||'1'):''}</div>` : ''}
     ${e.nvrStorage ? `<div class="entry-meta" style="margin-top:6px;">💾 Storage: ${escapeHtml(e.nvrStorage)}</div>` : ''}
     ${(e.geoLat!=null && e.geoLng!=null) ? `<div class="entry-meta" style="margin-top:4px;"><a href="https://maps.google.com/?q=${e.geoLat},${e.geoLng}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:none;">📍 View location on map ${e.geoAcc?('(±'+e.geoAcc+'m)'):''}</a></div>` : ''}
@@ -2110,6 +2165,10 @@ function editEntry(id){
   document.getElementById('fRamVersion').value = e.ramVersion || '';
   document.getElementById('fStorage').value = e.storageGb || '';
   document.getElementById('fStorageType').value = e.storageType || '';
+  document.getElementById('fHasHdd').checked = !!e.hasHdd;
+  document.getElementById('fHddStorage').value = e.hddStorage || '';
+  toggleHddField();
+  if(e.hasHdd) document.getElementById('fHddStorage').value = e.hddStorage || '';
 
   document.getElementById('fHasKeyboard').checked = !!e.hasKeyboard;
   document.getElementById('fHasMouse').checked = !!e.hasMouse;
@@ -2177,13 +2236,13 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const branch = document.getElementById('exportBranchFilter').value;
   const rows = branch ? ENTRIES.filter(e=> e.branch === branch) : ENTRIES;
   if(rows.length === 0){ showToast('No entries to export for this filter', true); return; }
-  const headers = ['Branch','Floor','Room / Area','Asset Category','Asset Name','Make','Model','Serial No','Quantity','Status','Remarks','Global ID','Employee Name','Employee Phone','Processor','RAM','Storage (GB)','Storage Type','Keyboard Qty','Mouse Qty','NVR/DVR Storage','GPS Location'];
+  const headers = ['Branch','Floor','Room / Area','Asset Category','Asset Name','Make','Model','Serial No','Quantity','Status','Remarks','Global ID','Employee Name','Employee Phone','Processor','RAM','Storage (GB)','Storage Type','HDD Storage','Keyboard Qty','Mouse Qty','NVR/DVR Storage','GPS Location'];
   const lines = [headers.join(',')];
   // export oldest-first so it reads naturally
   [...rows].reverse().forEach(e=>{
     const gps = (e.geoLat!=null && e.geoLng!=null) ? `${e.geoLat}, ${e.geoLng}` : '';
     const ramCombined = e.ramGb ? (e.ramGb + 'GB' + (e.ramVersion ? ' ' + e.ramVersion : '')) : (e.ramVersion || '');
-    lines.push([e.branch,e.floor,e.room,e.category,e.name,e.make,e.model,e.serial,e.qty,e.status,e.remarks,e.globalId||'',e.empName||'',e.empPhone||'',e.processor||'',ramCombined,e.storageGb||'',e.storageType||'',e.keyboardQty||'',e.mouseQty||'',e.nvrStorage||'',gps].map(csvEscape).join(','));
+    lines.push([e.branch,e.floor,e.room,e.category,e.name,e.make,e.model,e.serial,e.qty,e.status,e.remarks,e.globalId||'',e.empName||'',e.empPhone||'',e.processor||'',ramCombined,e.storageGb||'',e.storageType||'',e.hddStorage||'',e.keyboardQty||'',e.mouseQty||'',e.nvrStorage||'',gps].map(csvEscape).join(','));
   });
   const blob = new Blob([lines.join('\n')], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
