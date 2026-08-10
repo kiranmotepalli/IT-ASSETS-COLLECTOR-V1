@@ -1397,8 +1397,16 @@ const NAME_OPTIONS = {
   }
 };
 
-/* Access Point: Model auto-fills once a specific Make is chosen — one model per make. */
-const AP_MODEL_BY_MAKE = { "Quantum": "QN-I-200", "Ruckus": "R650" };
+/* Model auto-fills once a specific Make is chosen, scoped to a category (and
+   optionally a specific Asset Name within it) — one model per make. */
+const MODEL_BY_MAKE = {
+  "Access Point/Firewall": {
+    any: { "Quantum": "QN-I-200", "Ruckus": "R650" }
+  },
+  "Scanner/OMR": {
+    "OMR Scanner": { "Fujitsu": "SP-1130N" }
+  }
+};
 
 function updateFieldSuggestions(){
   const category = document.getElementById('fCategory').value;
@@ -1417,16 +1425,20 @@ function updateFieldSuggestions(){
   if(!showNcBatch) document.getElementById('fNcBatch').value = '';
 }
 
-function updateAccessPointModel(){
+function updateMakeDependentModel(){
   const category = document.getElementById('fCategory').value;
-  if(category !== 'Access Point/Firewall') return;
+  const byCategory = MODEL_BY_MAKE[category];
+  if(!byCategory) return;
+  const name = document.getElementById('fName').value.trim();
+  const byMake = byCategory[name] || byCategory.any;
+  if(!byMake) return;
   const make = document.getElementById('fMake').value.trim();
-  if(AP_MODEL_BY_MAKE[make]){
-    document.getElementById('fModel').value = AP_MODEL_BY_MAKE[make];
+  if(byMake[make]){
+    document.getElementById('fModel').value = byMake[make];
   }
 }
-document.getElementById('fMake').addEventListener('input', updateAccessPointModel);
-document.getElementById('fMake').addEventListener('change', updateAccessPointModel);
+document.getElementById('fMake').addEventListener('input', updateMakeDependentModel);
+document.getElementById('fMake').addEventListener('change', updateMakeDependentModel);
 
 function tryAutoFillFromCatalog(){
   const category = document.getElementById('fCategory').value;
