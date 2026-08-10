@@ -466,17 +466,15 @@ nav.tabbar{
         <div class="accessory-row">
           <div class="accessory-item">
             <label class="accessory-check">
-              <input type="checkbox" id="fHasKeyboard" onchange="toggleAccessoryQty('Keyboard')">
+              <input type="checkbox" id="fHasKeyboard">
               <span>⌨️ Keyboard</span>
             </label>
-            <input type="number" id="fKeyboardQty" class="accessory-qty" value="1" min="1" placeholder="Qty" style="display:none;">
           </div>
           <div class="accessory-item">
             <label class="accessory-check">
-              <input type="checkbox" id="fHasMouse" onchange="toggleAccessoryQty('Mouse')">
+              <input type="checkbox" id="fHasMouse">
               <span>🖱️ Mouse</span>
             </label>
-            <input type="number" id="fMouseQty" class="accessory-qty" value="1" min="1" placeholder="Qty" style="display:none;">
           </div>
         </div>
       </div>
@@ -1440,20 +1438,6 @@ function toggleHddField(){
   if(!checked) document.getElementById('fHddStorage').value = '';
 }
 
-function toggleAccessoryQty(which){
-  const cb = document.getElementById(which === 'Keyboard' ? 'fHasKeyboard' : 'fHasMouse');
-  const qty = document.getElementById(which === 'Keyboard' ? 'fKeyboardQty' : 'fMouseQty');
-  const cat = document.getElementById('fCategory').value;
-  const isThinClient = (cat === 'VCloudPoint/NComputing');
-  if(isThinClient){
-    // VCloudPoint/NComputing: keyboard/mouse are always exactly 1 each, no box to edit
-    qty.value = '1';
-    qty.style.display = 'none';
-  } else {
-    qty.style.display = cb.checked ? 'block' : 'none';
-  }
-}
-
 function toggleSystemConfig(){
   const cat = document.getElementById('fCategory').value;
   const isThinClient = (cat === 'VCloudPoint/NComputing');
@@ -1461,13 +1445,6 @@ function toggleSystemConfig(){
   document.getElementById('laptopSection').style.display = (cat === 'Laptop') ? 'block' : 'none';
   document.getElementById('systemConfigSection').style.display = (cat === 'System' || cat === 'Laptop' || cat === 'Server') ? 'block' : 'none';
   document.getElementById('accessoriesSection').style.display = (cat === 'System' || cat === 'Server' || isThinClient) ? 'block' : 'none';
-  if(isThinClient){
-    // keyboard/mouse qty boxes never show for these two — always exactly 1 each
-    document.getElementById('fKeyboardQty').value = '1';
-    document.getElementById('fKeyboardQty').style.display = 'none';
-    document.getElementById('fMouseQty').value = '1';
-    document.getElementById('fMouseQty').style.display = 'none';
-  }
   document.getElementById('nvrStorageSection').style.display = (cat === 'NVR' || cat === 'DVR') ? 'block' : 'none';
 
   // DVR SMPS is a simple stock item — just needs a quantity, skip Make/Model/Serial.
@@ -1875,8 +1852,8 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     hddStorage: (hasHwConfig && document.getElementById('fHasHdd').checked) ? document.getElementById('fHddStorage').value.trim() : '',
     hasKeyboard: hasAccessories ? document.getElementById('fHasKeyboard').checked : false,
     hasMouse: hasAccessories ? document.getElementById('fHasMouse').checked : false,
-    keyboardQty: (hasAccessories && document.getElementById('fHasKeyboard').checked) ? (document.getElementById('fKeyboardQty').value || '1') : '',
-    mouseQty: (hasAccessories && document.getElementById('fHasMouse').checked) ? (document.getElementById('fMouseQty').value || '1') : '',
+    keyboardQty: hasAccessories ? (document.getElementById('fHasKeyboard').checked ? '1' : '0') : '',
+    mouseQty: hasAccessories ? (document.getElementById('fHasMouse').checked ? '1' : '0') : '',
     nvrStorage: isNvrDvr ? nvrStorage : '',
     geoLat: GEO ? GEO.lat : null,
     geoLng: GEO ? GEO.lng : null,
@@ -1972,10 +1949,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
   document.getElementById('hddStorageGroup').style.display = 'none';
   document.getElementById('fHasKeyboard').checked = false;
   document.getElementById('fHasMouse').checked = false;
-  document.getElementById('fKeyboardQty').value = '1';
-  document.getElementById('fMouseQty').value = '1';
-  document.getElementById('fKeyboardQty').style.display = 'none';
-  document.getElementById('fMouseQty').style.display = 'none';
+
   document.getElementById('fNvrStorage').value = '';
   document.getElementById('fNcBatch').value = '';
   document.getElementById('ncBatchGroup').style.display = 'none';
@@ -2015,10 +1989,7 @@ document.getElementById('clearBtnForm').addEventListener('click', ()=>{
   document.getElementById('hddStorageGroup').style.display = 'none';
   document.getElementById('fHasKeyboard').checked = false;
   document.getElementById('fHasMouse').checked = false;
-  document.getElementById('fKeyboardQty').value = '1';
-  document.getElementById('fMouseQty').value = '1';
-  document.getElementById('fKeyboardQty').style.display = 'none';
-  document.getElementById('fMouseQty').style.display = 'none';
+
   document.getElementById('fNvrStorage').value = '';
   document.getElementById('fNcBatch').value = '';
   document.getElementById('ncBatchGroup').style.display = 'none';
@@ -2172,10 +2143,6 @@ function editEntry(id){
 
   document.getElementById('fHasKeyboard').checked = !!e.hasKeyboard;
   document.getElementById('fHasMouse').checked = !!e.hasMouse;
-  toggleAccessoryQty('Keyboard');
-  toggleAccessoryQty('Mouse');
-  if(e.hasKeyboard) document.getElementById('fKeyboardQty').value = e.keyboardQty || '1';
-  if(e.hasMouse) document.getElementById('fMouseQty').value = e.mouseQty || '1';
 
   const nvrPresets = ['1TB','2TB','4TB','8TB','16TB'];
   if(e.nvrStorage){
