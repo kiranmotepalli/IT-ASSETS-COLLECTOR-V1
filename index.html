@@ -411,7 +411,7 @@ nav.tabbar{
         <div class="row2">
           <div>
             <label>Processor</label>
-            <input type="text" id="fProcessor" placeholder="e.g. Intel i3 10th Gen">
+            <input type="text" id="fProcessor" list="processorSuggestList" placeholder="e.g. Intel i3 10th Gen">
           </div>
           <div>
             <label>RAM (GB)</label>
@@ -638,6 +638,13 @@ nav.tabbar{
         <option value="512">
         <option value="1TB">
       </datalist>
+      <datalist id="processorSuggestList">
+        <option value="Intel i3 12th Gen">
+        <option value="Intel i3 11th Gen">
+        <option value="Intel i3 10th Gen">
+        <option value="Intel Pentium Gold">
+        <option value="Intel Xeon">
+      </datalist>
 
       <div class="hint" id="kitStatus" style="display:none; text-align:center;"></div>
       <button class="btn primary" id="saveKitBtn">Save this kit to Entries</button>
@@ -849,7 +856,7 @@ function renderKitItems(role){
       <div class="row2" style="margin-top:8px;">
         <div>
           <label style="font-size:10px;margin:0 0 4px 0;">Processor</label>
-          <input type="text" class="kit-item-processor" placeholder="e.g. i3 10th Gen" style="font-size:13px;padding:9px 10px;">
+          <input type="text" class="kit-item-processor" list="processorSuggestList" placeholder="e.g. i3 10th Gen" style="font-size:13px;padding:9px 10px;">
         </div>
         <div>
           <label style="font-size:10px;margin:0 0 4px 0;">RAM</label>
@@ -923,7 +930,7 @@ function renderComputerLabItems(){
       <div class="row2" style="margin-top:8px;">
         <div>
           <label style="font-size:10px;margin:0 0 4px 0;">Processor</label>
-          <input type="text" id="labServerProcessor" placeholder="e.g. Xeon" style="font-size:13px;padding:9px 10px;">
+          <input type="text" id="labServerProcessor" list="processorSuggestList" placeholder="e.g. Xeon" style="font-size:13px;padding:9px 10px;">
         </div>
         <div>
           <label style="font-size:10px;margin:0 0 4px 0;">RAM</label>
