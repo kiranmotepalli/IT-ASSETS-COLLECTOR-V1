@@ -275,7 +275,7 @@ nav.tabbar{
     <div class="brand-mark">N</div>
     <div class="brand-text">
       <div class="t1">NSPIRA IT Assets Collector</div>
-      <div class="t2">FIELD DATA ENTRY</div>
+      <div class="t2">BRANCH DATA ENTRY · by iMkk</div>
     </div>
   </div>
   <div class="sync-badge" id="syncBadge">— entries</div>
@@ -568,6 +568,10 @@ nav.tabbar{
       <p style="font-size:12.5px;color:var(--text-dim);">Clears every entry saved on this device. Export first if you need a copy.</p>
       <button class="btn danger" id="clearBtn">Clear all entries</button>
     </div>
+
+    <div style="text-align:center; font-size:11px; color:var(--text-faint); margin-top:4px; padding-bottom:8px;">
+      Developed by iMkk
+    </div>
   </div>
 
 </main>
@@ -602,6 +606,7 @@ nav.tabbar{
         <option>Accountant</option>
         <option>Operator</option>
         <option>Principal</option>
+        <option>AV Room</option>
         <option>Computer Lab</option>
       </select>
 
@@ -732,20 +737,20 @@ const STATUSES = ["Working","Not Working","Under Repair","Sent to Vendor","Await
    object with more categories/items any time; keys must match CATEGORIES. */
 const CATALOG = {
   "CCTV Camera Analog": [
-    { name: "Hikvision 2MP Dome Camera",   make: "Hikvision", model: "Dome" },
-    { name: "Hikvision 2MP Bullet Camera", make: "Hikvision", model: "Bullet" },
-    { name: "Prama 2MP Dome Camera",       make: "Prama",     model: "Dome" },
-    { name: "Prama 2MP Bullet Camera",     make: "Prama",     model: "Bullet" },
-    { name: "Dahua 2MP Dome Camera",       make: "Dahua",     model: "Dome" },
-    { name: "Dahua 2MP Bullet Camera",     make: "Dahua",     model: "Bullet" }
+    { name: "Hikvision 2MP Dome Camera",   make: "Hikvision", model: "Dome 2MP Camera" },
+    { name: "Hikvision 2MP Bullet Camera", make: "Hikvision", model: "Bullet 2MP Camera" },
+    { name: "Prama 2MP Dome Camera",       make: "Prama",     model: "Dome 2MP Camera" },
+    { name: "Prama 2MP Bullet Camera",     make: "Prama",     model: "Bullet 2MP Camera" },
+    { name: "Dahua 2MP Dome Camera",       make: "Dahua",     model: "Dome 2MP Camera" },
+    { name: "Dahua 2MP Bullet Camera",     make: "Dahua",     model: "Bullet 2MP Camera" }
   ],
   "CCTV Camera IP": [
-    { name: "IP Hikvision 2MP Dome Camera",   make: "Hikvision", model: "Dome" },
-    { name: "IP Hikvision 2MP Bullet Camera", make: "Hikvision", model: "Bullet" },
-    { name: "IP Prama 2MP Dome Camera",       make: "Prama",     model: "Dome" },
-    { name: "IP Prama 2MP Bullet Camera",     make: "Prama",     model: "Bullet" },
-    { name: "IP Dahua 2MP Dome Camera",       make: "Dahua",     model: "Dome" },
-    { name: "IP Dahua 2MP Bullet Camera",     make: "Dahua",     model: "Bullet" }
+    { name: "IP Hikvision 2MP Dome Camera",   make: "Hikvision", model: "Dome 2MP IP Camera" },
+    { name: "IP Hikvision 2MP Bullet Camera", make: "Hikvision", model: "Bullet 2MP IP Camera" },
+    { name: "IP Prama 2MP Dome Camera",       make: "Prama",     model: "Dome 2MP IP Camera" },
+    { name: "IP Prama 2MP Bullet Camera",     make: "Prama",     model: "Bullet 2MP IP Camera" },
+    { name: "IP Dahua 2MP Dome Camera",       make: "Dahua",     model: "Dome 2MP IP Camera" },
+    { name: "IP Dahua 2MP Bullet Camera",     make: "Dahua",     model: "Bullet 2MP IP Camera" }
   ],
   "NVR": [
     { name: "Hikvision 32CH NVR", make: "Hikvision", model: "32CH NVR" },
@@ -812,6 +817,13 @@ const ROLE_KITS = {
     { category: "Printer",    label: "Printer" },
     { category: "TV Display", label: "TV" },
     { category: "Other",      label: "Others",   freeform: true }
+  ],
+  "AV Room": [
+    { category: "System",    label: "System",   accessories: true },
+    { category: "Projector", label: "Projector", hasScreenOption: true },
+    { category: "Audio",     label: "Amplifier", nameOverride: "Amplifier", presetMake: "Ahuja", presetModel: "SSB45EM", presetQty: "1" },
+    { category: "Audio",     label: "Speakers",  nameOverride: "Speakers",  presetMake: "Ahuja", presetModel: "400T",    presetQty: "2" },
+    { category: "Other",     label: "Others",   freeform: true }
   ]
 };
 
@@ -880,24 +892,24 @@ function renderKitItems(role){
     return `
     <div class="kit-item" data-idx="${idx}">
       <div class="kit-item-head">
-        <input type="checkbox" class="kit-item-check" checked>
+        <input type="checkbox" class="kit-item-check" ${item.startUnchecked ? '' : 'checked'}>
         <div>
           <div class="kit-item-name">${escapeHtml(displayName)}</div>
-          <div class="kit-item-cat">${escapeHtml(item.category)}${item.accessories ? ' · incl. keyboard + mouse' : ''}</div>
+          <div class="kit-item-cat">${escapeHtml(item.category)}</div>
         </div>
       </div>
       <div class="kit-item-fields">
         <div>
           <label>Qty</label>
-          <input type="number" class="kit-item-qty" value="1" min="1">
+          <input type="number" class="kit-item-qty" value="${item.presetQty ? escapeHtml(item.presetQty) : '1'}" min="1">
         </div>
         <div>
           <label>Make</label>
-          <input type="text" class="kit-item-make" placeholder="${makePlaceholder}" ${makeListId ? `list="${makeListId}"` : ''}>
+          <input type="text" class="kit-item-make" value="${item.presetMake ? escapeHtml(item.presetMake) : ''}" placeholder="${makePlaceholder}" ${makeListId ? `list="${makeListId}"` : ''}>
         </div>
         <div>
           <label>Model</label>
-          <input type="text" class="kit-item-model" placeholder="${modelPlaceholder}" ${modelListId ? `list="${modelListId}"` : ''}>
+          <input type="text" class="kit-item-model" value="${item.presetModel ? escapeHtml(item.presetModel) : ''}" placeholder="${modelPlaceholder}" ${modelListId ? `list="${modelListId}"` : ''}>
         </div>
         <div>
           <label>Serial</label>
@@ -907,6 +919,13 @@ function renderKitItems(role){
           </div>
         </div>
       </div>
+      ${item.hasScreenOption ? `
+      <div class="accessory-row" style="margin-top:8px;">
+        <label class="accessory-check" style="flex:1;">
+          <input type="checkbox" class="kit-item-screen">
+          <span>📽️ Include Projector Screen (Qty 1)</span>
+        </label>
+      </div>` : ''}
       ${isSystem ? `
       <div class="row2" style="margin-top:8px;">
         <div>
@@ -953,7 +972,18 @@ function renderKitItems(role){
       <div class="kit-item-hdd-group" style="display:none; margin-top:8px;">
         <label style="font-size:10px;margin:0 0 4px 0;">HDD Storage</label>
         <input type="text" class="kit-item-hddstorage" list="hddStorageList" placeholder="e.g. 1TB" style="font-size:13px;padding:9px 10px;">
-      </div>` : ''}
+      </div>
+      ${item.accessories ? `
+      <div class="accessory-row" style="margin-top:8px;">
+        <label class="accessory-check" style="flex:1;">
+          <input type="checkbox" class="kit-item-haskeyboard" checked>
+          <span>⌨️ Keyboard</span>
+        </label>
+        <label class="accessory-check" style="flex:1;">
+          <input type="checkbox" class="kit-item-hasmouse" checked>
+          <span>🖱️ Mouse</span>
+        </label>
+      </div>` : ''}` : ''}
     </div>`;
   }).join('');
 }
@@ -1308,6 +1338,12 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
     const storageTypeEl = row.querySelector('.kit-item-storagetype');
     const hasHddEl = row.querySelector('.kit-item-hashdd');
     const hddStorageEl = row.querySelector('.kit-item-hddstorage');
+    const hasKeyboardEl = row.querySelector('.kit-item-haskeyboard');
+    const hasMouseEl = row.querySelector('.kit-item-hasmouse');
+    const hasKeyboard = !!(item.accessories && hasKeyboardEl && hasKeyboardEl.checked);
+    const hasMouse = !!(item.accessories && hasMouseEl && hasMouseEl.checked);
+    const screenEl = row.querySelector('.kit-item-screen');
+    const includeScreen = !!(item.hasScreenOption && screenEl && screenEl.checked);
 
     ENTRIES.unshift({
       id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
@@ -1323,8 +1359,8 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
       storageType: (isSystem && storageTypeEl) ? storageTypeEl.value : '',
       hasHdd: (isSystem && hasHddEl) ? hasHddEl.checked : false,
       hddStorage: (isSystem && hasHddEl && hasHddEl.checked && hddStorageEl) ? hddStorageEl.value.trim() : '',
-      hasKeyboard: !!item.accessories, hasMouse: !!item.accessories,
-      keyboardQty: item.accessories ? qty : '', mouseQty: item.accessories ? qty : '',
+      hasKeyboard, hasMouse,
+      keyboardQty: hasKeyboard ? qty : '', mouseQty: hasMouse ? qty : '',
       nvrStorage: '',
       geoLat: GEO ? GEO.lat : null,
       geoLng: GEO ? GEO.lng : null,
@@ -1332,6 +1368,26 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
       ts: new Date().toISOString()
     });
     saved++;
+
+    if(includeScreen){
+      ENTRIES.unshift({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+        branch, category: item.category, name: 'Projector Screen',
+        floor, room,
+        make: '-', model: '-', serial: '-', qty: '1',
+        status: 'Working', remarks: empName ? ('Assigned to: ' + empName) : '',
+        globalId: '', empName: '', empPhone: '',
+        processor: '', ramGb: '', ramVersion: '', storageGb: '', storageType: '',
+        hasHdd: false, hddStorage: '',
+        hasKeyboard: false, hasMouse: false, keyboardQty: '', mouseQty: '',
+        nvrStorage: '',
+        geoLat: GEO ? GEO.lat : null,
+        geoLng: GEO ? GEO.lng : null,
+        geoAcc: GEO ? GEO.acc : null,
+        ts: new Date().toISOString()
+      });
+      saved++;
+    }
   });
   }
 
@@ -1533,6 +1589,12 @@ function toggleSystemConfig(){
   document.getElementById('laptopSection').style.display = (cat === 'Laptop') ? 'block' : 'none';
   document.getElementById('systemConfigSection').style.display = (cat === 'System' || cat === 'Laptop' || cat === 'Server') ? 'block' : 'none';
   document.getElementById('accessoriesSection').style.display = (cat === 'System' || cat === 'Server' || isThinClient) ? 'block' : 'none';
+  if(cat === 'System'){
+    // System is by far the most common case where a keyboard+mouse come with it —
+    // default them checked so the common case needs no extra taps; still untick-able
+    document.getElementById('fHasKeyboard').checked = true;
+    document.getElementById('fHasMouse').checked = true;
+  }
   document.getElementById('nvrStorageSection').style.display = (cat === 'NVR' || cat === 'DVR') ? 'block' : 'none';
 
   // DVR SMPS is a simple stock item — just needs a quantity, skip Make/Model/Serial.
@@ -1602,6 +1664,8 @@ document.getElementById('fCategory').addEventListener('change', ()=>{
   document.getElementById('fSerial').value = '';
   document.getElementById('fSerialsBatch').value = '';
   document.getElementById('fCameraType').value = 'Analog';
+  document.getElementById('fHasKeyboard').checked = false;
+  document.getElementById('fHasMouse').checked = false;
   populateNameSuggestions(document.getElementById('fCategory').value);
   updateFieldSuggestions(); // sets Make/Model suggestion lists (includes MAKE_SUGGESTIONS categories too)
   toggleSystemConfig(); // re-applies category-specific defaults, e.g. VCloudPoint's fixed name/model
@@ -2586,7 +2650,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v64';
+const APP_VERSION = 'nspira-it-collector-v70';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
