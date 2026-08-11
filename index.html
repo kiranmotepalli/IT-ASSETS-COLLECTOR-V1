@@ -604,6 +604,7 @@ nav.tabbar{
       <select id="kitRole">
         <option value="">Select a role…</option>
         <option>Accountant</option>
+        <option>Board</option>
         <option>Operator</option>
         <option>Principal</option>
         <option>AGM</option>
@@ -661,6 +662,8 @@ nav.tabbar{
         <option value="4GB">
         <option value="8GB">
         <option value="16GB">
+        <option value="32GB">
+        <option value="64GB">
       </datalist>
       <datalist id="kitStorageList">
         <option value="256">
@@ -702,6 +705,13 @@ function loadEntries(){
 }
 function saveEntries(){
   localStorage.setItem(STORE_KEY, JSON.stringify(ENTRIES));
+}
+
+function cleanRamGb(v){
+  // strips a trailing "GB" the user may have typed/picked (the RAM suggestions
+  // include it, e.g. "8GB") so the stored value is always a clean number —
+  // display/export code adds its own "GB" suffix, so this prevents "8GBGB"
+  return String(v||'').replace(/\s*gb\s*$/i, '').trim();
 }
 
 function checkDuplicateSerial(){
@@ -839,6 +849,9 @@ const ROLE_KITS = {
 ROLE_KITS["AGM"] = ROLE_KITS["Principal"];
 ROLE_KITS["DGM"] = ROLE_KITS["Principal"];
 ROLE_KITS["Dean"] = ROLE_KITS["Principal"];
+
+// Board gets the same equipment set as Accountant
+ROLE_KITS["Board"] = ROLE_KITS["Accountant"];
 
 function openRoleKitModal(){
   document.getElementById('roleKitModal').classList.add('active');
@@ -1266,7 +1279,7 @@ function saveComputerLabKit(branch, floor, room, empName){
     const model = document.getElementById('labServerModel').value.trim() || '-';
     const qty = document.getElementById('labServerQty').value || '1';
     const processor = document.getElementById('labServerProcessor').value.trim();
-    const ramGb = document.getElementById('labServerRam').value.trim();
+    const ramGb = cleanRamGb(document.getElementById('labServerRam').value);
     const ramVersion = document.getElementById('labServerRamVersion').value;
     const storageGb = document.getElementById('labServerStorage').value.trim();
     const storageType = document.getElementById('labServerStorageType').value;
@@ -1410,7 +1423,7 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
       status: 'Working', remarks: empName ? ('Assigned to: ' + empName) : '',
       globalId: '', empName: isSystem ? empName : '', empPhone: '',
       processor: (isSystem && processorEl) ? processorEl.value.trim() : '',
-      ramGb: (isSystem && ramEl) ? ramEl.value.trim() : '',
+      ramGb: (isSystem && ramEl) ? cleanRamGb(ramEl.value) : '',
       ramVersion: (isSystem && ramVersionEl) ? ramVersionEl.value : '',
       storageGb: (isSystem && storageEl) ? storageEl.value.trim() : '',
       storageType: (isSystem && storageTypeEl) ? storageTypeEl.value : '',
@@ -2067,7 +2080,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     empName: isLaptop ? document.getElementById('fEmpName').value.trim() : '',
     empPhone: isLaptop ? document.getElementById('fEmpPhone').value.trim() : '',
     processor: hasHwConfig ? document.getElementById('fProcessor').value.trim() : '',
-    ramGb: hasHwConfig ? document.getElementById('fRam').value.trim() : '',
+    ramGb: hasHwConfig ? cleanRamGb(document.getElementById('fRam').value) : '',
     ramVersion: hasHwConfig ? document.getElementById('fRamVersion').value : '',
     storageGb: hasHwConfig ? document.getElementById('fStorage').value.trim() : '',
     storageType: hasHwConfig ? document.getElementById('fStorageType').value : '',
@@ -2242,7 +2255,7 @@ function entryCardHtml(e, showBranchTag){
     </div>
     ${e.remarks ? `<div class="entry-meta" style="margin-top:6px;">📝 ${escapeHtml(e.remarks)}</div>` : ''}
     ${(e.globalId || e.empName || e.empPhone) ? `<div class="entry-meta" style="margin-top:6px;">🪪 ${e.globalId?escapeHtml(e.globalId):'Global ID —'} · ${e.empName?escapeHtml(e.empName):'—'}${e.empPhone?' · '+escapeHtml(e.empPhone):''}</div>` : ''}
-    ${(e.processor || e.ramGb || e.storageGb || e.storageType) ? `<div class="entry-meta" style="margin-top:6px;">🖥️ ${escapeHtml(e.processor||'—')} · ${e.ramGb?escapeHtml(e.ramGb)+'GB'+(e.ramVersion?' '+escapeHtml(e.ramVersion):'')+' RAM':'RAM —'} · ${e.storageGb?escapeHtml(e.storageGb)+'GB '+escapeHtml(e.storageType||''):'Storage —'}${e.hasHdd?' · +HDD '+escapeHtml(e.hddStorage||''):''}</div>` : ''}
+    ${(e.processor || e.ramGb || e.storageGb || e.storageType) ? `<div class="entry-meta" style="margin-top:6px;">🖥️ ${escapeHtml(e.processor||'—')} · ${e.ramGb?escapeHtml(cleanRamGb(e.ramGb))+'GB'+(e.ramVersion?' '+escapeHtml(e.ramVersion):'')+' RAM':'RAM —'} · ${e.storageGb?escapeHtml(e.storageGb)+'GB '+escapeHtml(e.storageType||''):'Storage —'}${e.hasHdd?' · +HDD '+escapeHtml(e.hddStorage||''):''}</div>` : ''}
     ${(e.hasKeyboard || e.hasMouse) ? `<div class="entry-meta" style="margin-top:6px;">${e.hasKeyboard?'⌨️ Keyboard x'+escapeHtml(e.keyboardQty||'1'):''}${(e.hasKeyboard&&e.hasMouse)?' · ':''}${e.hasMouse?'🖱️ Mouse x'+escapeHtml(e.mouseQty||'1'):''}</div>` : ''}
     ${e.nvrStorage ? `<div class="entry-meta" style="margin-top:6px;">💾 Storage: ${escapeHtml(e.nvrStorage)}</div>` : ''}
     ${(e.geoLat!=null && e.geoLng!=null) ? `<div class="entry-meta" style="margin-top:4px;"><a href="https://maps.google.com/?q=${e.geoLat},${e.geoLng}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:none;">📍 View location on map ${e.geoAcc?('(±'+e.geoAcc+'m)'):''}</a></div>` : ''}
@@ -2482,7 +2495,8 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   // export oldest-first so it reads naturally
   [...rows].reverse().forEach(e=>{
     const gps = (e.geoLat!=null && e.geoLng!=null) ? `${e.geoLat}, ${e.geoLng}` : '';
-    const ramCombined = e.ramGb ? (e.ramGb + 'GB' + (e.ramVersion ? ' ' + e.ramVersion : '')) : (e.ramVersion || '');
+    const ramGbClean = cleanRamGb(e.ramGb);
+    const ramCombined = ramGbClean ? (ramGbClean + 'GB' + (e.ramVersion ? ' ' + e.ramVersion : '')) : (e.ramVersion || '');
     lines.push([e.branch,e.floor,e.room,e.category,e.name,e.make,e.model,e.serial,e.qty,e.status,e.remarks,e.globalId||'',e.empName||'',e.empPhone||'',e.processor||'',ramCombined,e.storageGb||'',e.storageType||'',e.hddStorage||'',e.keyboardQty||'',e.mouseQty||'',e.nvrStorage||'',gps].map(csvEscape).join(','));
   });
   const blob = new Blob([lines.join('\n')], {type:'text/csv'});
@@ -2756,7 +2770,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v74';
+const APP_VERSION = 'nspira-it-collector-v77';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
