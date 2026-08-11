@@ -606,6 +606,9 @@ nav.tabbar{
         <option>Accountant</option>
         <option>Operator</option>
         <option>Principal</option>
+        <option>AGM</option>
+        <option>DGM</option>
+        <option>Dean</option>
         <option>AV Room</option>
         <option>Computer Lab</option>
       </select>
@@ -799,6 +802,7 @@ const ROLE_KITS = {
     { category: "Monitor", label: "Monitor" },
     { category: "Printer", label: "Printer" },
     { category: "Scanner/OMR", label: "Scanner" },
+    { category: "CCTV Camera", label: "Camera", isCctvCamera: true },
     { category: "Other",   label: "Others",  freeform: true }
   ],
   "Operator": [
@@ -806,6 +810,7 @@ const ROLE_KITS = {
     { category: "Monitor", label: "Monitor" },
     { category: "Printer", label: "Printer" },
     { category: "Scanner/OMR", label: "OMR Scanner", nameOverride: "OMR Scanner" },
+    { category: "CCTV Camera", label: "Camera", isCctvCamera: true },
     { category: "Other",   label: "Others",  freeform: true }
   ],
   "Principal": [
@@ -816,6 +821,7 @@ const ROLE_KITS = {
     { category: "Audio",      label: "Speakers",   nameOverride: "Speakers" },
     { category: "Printer",    label: "Printer" },
     { category: "TV Display", label: "TV" },
+    { category: "CCTV Camera", label: "Camera", isCctvCamera: true },
     { category: "Other",      label: "Others",   freeform: true }
   ],
   "AV Room": [
@@ -823,9 +829,16 @@ const ROLE_KITS = {
     { category: "Projector", label: "Projector", hasScreenOption: true },
     { category: "Audio",     label: "Amplifier", nameOverride: "Amplifier", presetMake: "Ahuja", presetModel: "SSB45EM", presetQty: "1" },
     { category: "Audio",     label: "Speakers",  nameOverride: "Speakers",  presetMake: "Ahuja", presetModel: "400T",    presetQty: "2" },
+    { category: "CCTV Camera", label: "Camera", isCctvCamera: true },
     { category: "Other",     label: "Others",   freeform: true }
   ]
 };
+
+// AGM / DGM / Dean get the exact same equipment set as Principal — sharing
+// the same array so any future change to Principal's kit applies to all four
+ROLE_KITS["AGM"] = ROLE_KITS["Principal"];
+ROLE_KITS["DGM"] = ROLE_KITS["Principal"];
+ROLE_KITS["Dean"] = ROLE_KITS["Principal"];
 
 function openRoleKitModal(){
   document.getElementById('roleKitModal').classList.add('active');
@@ -892,12 +905,26 @@ function renderKitItems(role){
     return `
     <div class="kit-item" data-idx="${idx}">
       <div class="kit-item-head">
-        <input type="checkbox" class="kit-item-check" ${item.startUnchecked ? '' : 'checked'}>
+        <input type="checkbox" class="kit-item-check">
         <div>
           <div class="kit-item-name">${escapeHtml(displayName)}</div>
           <div class="kit-item-cat">${escapeHtml(item.category)}</div>
         </div>
       </div>
+      ${item.isCctvCamera ? `
+      <div class="row2">
+        <div>
+          <label>Camera Type</label>
+          <select class="kit-item-cameratype" onchange="updateKitCameraNameOptions(${idx})">
+            <option value="Analog">Analog</option>
+            <option value="IP">IP</option>
+          </select>
+        </div>
+        <div>
+          <label>Camera Name</label>
+          <select class="kit-item-cameraname" onchange="applyKitCameraPreset(${idx})"></select>
+        </div>
+      </div>` : ''}
       <div class="kit-item-fields">
         <div>
           <label>Qty</label>
@@ -986,6 +1013,35 @@ function renderKitItems(role){
       </div>` : ''}` : ''}
     </div>`;
   }).join('');
+
+  // Camera items need their Name dropdown populated on load, not just on change
+  items.forEach((item, idx)=>{
+    if(item.isCctvCamera) updateKitCameraNameOptions(idx);
+  });
+}
+
+function updateKitCameraNameOptions(idx){
+  const row = document.querySelector(`.kit-item[data-idx="${idx}"]`);
+  if(!row) return;
+  const type = row.querySelector('.kit-item-cameratype').value;
+  const catKey = type === 'IP' ? 'CCTV Camera IP' : 'CCTV Camera Analog';
+  const options = CATALOG[catKey] || [];
+  const sel = row.querySelector('.kit-item-cameraname');
+  sel.innerHTML = options.map(o=>`<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join('');
+  applyKitCameraPreset(idx);
+}
+
+function applyKitCameraPreset(idx){
+  const row = document.querySelector(`.kit-item[data-idx="${idx}"]`);
+  if(!row) return;
+  const type = row.querySelector('.kit-item-cameratype').value;
+  const catKey = type === 'IP' ? 'CCTV Camera IP' : 'CCTV Camera Analog';
+  const name = row.querySelector('.kit-item-cameraname').value;
+  const match = (CATALOG[catKey] || []).find(o=> o.name === name);
+  if(match){
+    row.querySelector('.kit-item-make').value = match.make;
+    row.querySelector('.kit-item-model').value = match.model;
+  }
 }
 
 function scanKitSerial(idx){
@@ -1001,7 +1057,7 @@ function renderComputerLabItems(){
   document.getElementById('kitItemsList').innerHTML = `
     <div class="kit-item">
       <div class="kit-item-head">
-        <input type="checkbox" class="kit-item-check" id="labServerCheck" checked>
+        <input type="checkbox" class="kit-item-check" id="labServerCheck">
         <div>
           <div class="kit-item-name">Server</div>
           <div class="kit-item-cat">System</div>
@@ -1067,7 +1123,7 @@ function renderComputerLabItems(){
 
     <div class="kit-item">
       <div class="kit-item-head">
-        <input type="checkbox" class="kit-item-check" id="labNetCheck" checked>
+        <input type="checkbox" class="kit-item-check" id="labNetCheck">
         <div>
           <div class="kit-item-name">VCloud / NComputing</div>
           <div class="kit-item-cat">Thin client</div>
@@ -1099,7 +1155,7 @@ function renderComputerLabItems(){
 
     <div class="kit-item">
       <div class="kit-item-head">
-        <input type="checkbox" class="kit-item-check" id="labMonitorCheck" checked>
+        <input type="checkbox" class="kit-item-check" id="labMonitorCheck">
         <div>
           <div class="kit-item-name">Monitor</div>
           <div class="kit-item-cat">Monitor</div>
@@ -1119,7 +1175,7 @@ function renderComputerLabItems(){
 
     <div class="kit-item">
       <div class="kit-item-head">
-        <input type="checkbox" class="kit-item-check" id="labKeyboardCheck" checked>
+        <input type="checkbox" class="kit-item-check" id="labKeyboardCheck">
         <div>
           <div class="kit-item-name">Keyboard</div>
           <div class="kit-item-cat">Accessory</div>
@@ -1133,7 +1189,7 @@ function renderComputerLabItems(){
 
     <div class="kit-item">
       <div class="kit-item-head">
-        <input type="checkbox" class="kit-item-check" id="labMouseCheck" checked>
+        <input type="checkbox" class="kit-item-check" id="labMouseCheck">
         <div>
           <div class="kit-item-name">Mouse</div>
           <div class="kit-item-cat">Accessory</div>
@@ -1328,7 +1384,8 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
     const make = row.querySelector('.kit-item-make').value.trim() || '-';
     const model = row.querySelector('.kit-item-model').value.trim() || '-';
     const serial = row.querySelector('.kit-item-serial').value.trim() || '-';
-    const name = item.nameOverride || item.label;
+    const cameraNameEl = row.querySelector('.kit-item-cameraname');
+    const name = (item.isCctvCamera && cameraNameEl && cameraNameEl.value) ? cameraNameEl.value : (item.nameOverride || item.label);
     const isSystem = item.category === 'System';
 
     const processorEl = row.querySelector('.kit-item-processor');
@@ -2133,6 +2190,7 @@ document.getElementById('clearBtnForm').addEventListener('click', ()=>{
   document.getElementById('fBranch').value = '';
   document.getElementById('fFloor').value = '';
   document.getElementById('fRoom').value = '';
+  ensureCategoryOptionExists(''); // removes any temp option left over from editing an orphan-category entry
   document.getElementById('fCategory').value = '';
   document.getElementById('fName').value = '';
   populateNameSuggestions('');
@@ -2258,6 +2316,25 @@ function deleteEntry(id){
   renderEntries();
 }
 
+function ensureCategoryOptionExists(category){
+  const sel = document.getElementById('fCategory');
+  // clear any previously-injected temp option first — only ever keep one around
+  sel.querySelectorAll('option[data-temp="1"]').forEach(o=> o.remove());
+  if(!category) return;
+  const exists = Array.from(sel.options).some(o=> o.value === category);
+  if(!exists){
+    // this entry's category isn't a normal pickable option (e.g. a standalone
+    // Keyboard/Mouse line item saved via a Role Kit) — add it temporarily so
+    // it can display and be edited correctly, without polluting the dropdown
+    // for actual new entries
+    const opt = document.createElement('option');
+    opt.value = category;
+    opt.textContent = category;
+    opt.setAttribute('data-temp', '1');
+    sel.appendChild(opt);
+  }
+}
+
 function populateFormFromEntry(e, skipSerial){
   // set branch/floor/room first
   document.getElementById('fBranch').value = e.branch || '';
@@ -2266,6 +2343,7 @@ function populateFormFromEntry(e, skipSerial){
 
   // set category, which triggers suggestion lists + any category defaults —
   // we override those defaults right after with the entry's real saved values
+  ensureCategoryOptionExists(e.category || '');
   document.getElementById('fCategory').value = e.category || '';
   populateNameSuggestions(e.category || '');
   toggleSystemConfig();
@@ -2678,7 +2756,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v72';
+const APP_VERSION = 'nspira-it-collector-v74';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
