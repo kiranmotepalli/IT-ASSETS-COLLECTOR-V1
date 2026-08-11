@@ -1747,7 +1747,8 @@ const BRANCHES = [
   "VIJ-NSPIRA-VEG-WH-5562",
   "AP-KRI-VIJ-COS DAY KNR-NSPIRA-S-7160",
   "VIJ-NSPIRA-WORKSHOP-6950",
-  "VIJ-NSPIRA-DO-5071"
+  "VIJ-NSPIRA-DO-5071",
+  "AP-KRI-VIJ-KNR-NSPIRA-S-7421"
 ];
 
 const FLOORS = [
@@ -2189,6 +2190,7 @@ function entryCardHtml(e, showBranchTag){
     ${(e.geoLat!=null && e.geoLng!=null) ? `<div class="entry-meta" style="margin-top:4px;"><a href="https://maps.google.com/?q=${e.geoLat},${e.geoLng}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:none;">📍 View location on map ${e.geoAcc?('(±'+e.geoAcc+'m)'):''}</a></div>` : ''}
     <div class="entry-actions">
       <button class="icon-btn" onclick="editEntry('${e.id}')">✎ Edit</button>
+      <button class="icon-btn" onclick="copyEntry('${e.id}')">⧉ Copy</button>
       <button class="icon-btn danger" onclick="deleteEntry('${e.id}')">Delete</button>
     </div>
   </div>`;
@@ -2256,12 +2258,7 @@ function deleteEntry(id){
   renderEntries();
 }
 
-function editEntry(id){
-  const e = ENTRIES.find(x=> x.id === id);
-  if(!e) return;
-
-  editingEntryId = id;
-
+function populateFormFromEntry(e, skipSerial){
   // set branch/floor/room first
   document.getElementById('fBranch').value = e.branch || '';
   document.getElementById('fFloor').value = (e.floor && e.floor !== '-') ? e.floor : '';
@@ -2284,7 +2281,7 @@ function editEntry(id){
   document.getElementById('fName').value = nameForField;
   document.getElementById('fMake').value = (e.make && e.make !== '-') ? e.make : '';
   document.getElementById('fModel').value = (e.model && e.model !== '-') ? e.model : '';
-  document.getElementById('fSerial').value = (e.serial && e.serial !== '-') ? e.serial : '';
+  document.getElementById('fSerial').value = (!skipSerial && e.serial && e.serial !== '-') ? e.serial : '';
   checkDuplicateSerial();
   document.getElementById('fQty').value = e.qty || '1';
   document.getElementById('fStatus').value = e.status || 'Working';
@@ -2313,6 +2310,8 @@ function editEntry(id){
   document.getElementById('fHasMouse').checked = !!e.hasMouse;
 
   const nvrPresets = ['1TB','2TB','4TB','8TB','16TB'];
+  document.getElementById('fNvrStorage').value = '';
+  document.getElementById('fNvrStorageOther').value = '';
   if(e.nvrStorage){
     if(nvrPresets.includes(e.nvrStorage)){
       document.getElementById('fNvrStorage').value = e.nvrStorage;
@@ -2320,13 +2319,42 @@ function editEntry(id){
       document.getElementById('fNvrStorage').value = '__OTHER__';
       document.getElementById('fNvrStorageOther').value = e.nvrStorage;
     }
-    toggleNvrStorageOther();
   }
+  toggleNvrStorageOther();
+}
+
+function editEntry(id){
+  const e = ENTRIES.find(x=> x.id === id);
+  if(!e) return;
+
+  editingEntryId = id;
+  populateFormFromEntry(e, false);
 
   document.getElementById('editBanner').style.display = 'block';
   document.getElementById('saveBtn').textContent = 'Update entry';
   switchView('add');
   document.getElementById('editBanner').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function copyEntry(id){
+  const e = ENTRIES.find(x=> x.id === id);
+  if(!e) return;
+
+  // a copy is always a brand-new entry, never an update to the original —
+  // make sure we're not accidentally still in edit mode from something else
+  editingEntryId = null;
+  document.getElementById('editBanner').style.display = 'none';
+  document.getElementById('saveBtn').textContent = 'Save entry';
+
+  populateFormFromEntry(e, true); // skip serial — every unit needs its own
+
+  switchView('add');
+  showToast('Copied — same config, just add the new serial number');
+  const serialField = document.getElementById('fSerial');
+  if(serialField.offsetParent !== null){
+    serialField.scrollIntoView({behavior:'smooth', block:'center'});
+    serialField.focus();
+  }
 }
 
 function cancelEditEntry(){
@@ -2650,7 +2678,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v70';
+const APP_VERSION = 'nspira-it-collector-v72';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
