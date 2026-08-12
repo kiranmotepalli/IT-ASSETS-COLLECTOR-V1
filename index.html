@@ -2313,6 +2313,7 @@ function renderEntries(){
         <span class="chev">${collapsed?'▸':'▾'}</span>
         <span class="entry-tag" style="margin:0;">${escapeHtml(branch)}</span>
         <span class="branch-group-count">${items.length} item${items.length!==1?'s':''} · qty ${qty}</span>
+        <button type="button" class="icon-btn danger" style="margin-left:8px; padding:4px 9px;" onclick="event.stopPropagation(); deleteBranchEntries('${encodeURIComponent(branch)}')" title="Delete all entries for this branch">🗑</button>
       </div>
       ${collapsed ? '' : `<div class="branch-group-body">${items.map(e=>entryCardHtml(e,false)).join('')}</div>`}
     </div>`;
@@ -2327,6 +2328,20 @@ function deleteEntry(id){
   refreshBranchList();
   updateSyncBadge();
   renderEntries();
+}
+
+function deleteBranchEntries(encodedBranch){
+  const branch = decodeURIComponent(encodedBranch);
+  const count = ENTRIES.filter(e=> e.branch === branch).length;
+  if(count === 0) return;
+  if(!confirm(`Delete all ${count} entr${count===1?'y':'ies'} for branch:\n\n${branch}\n\nThis cannot be undone. Export a CSV first if you need a copy.`)) return;
+  ENTRIES = ENTRIES.filter(e=> e.branch !== branch);
+  COLLAPSED.delete(branch);
+  saveEntries();
+  refreshBranchList();
+  updateSyncBadge();
+  renderEntries();
+  showToast(`Deleted ${count} entr${count===1?'y':'ies'} for ${branch}`);
 }
 
 function ensureCategoryOptionExists(category){
@@ -2770,7 +2785,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v77';
+const APP_VERSION = 'nspira-it-collector-v81';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
