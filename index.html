@@ -536,6 +536,14 @@ nav.tabbar{
   <!-- EXPORT -->
   <div class="view" id="view-export">
     <div class="panel">
+      <div class="section-title">Zone</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div style="font-size:14px;">Current zone: <b id="currentZoneLabel" style="color:var(--amber);">—</b></div>
+        <button type="button" class="btn small ghost" id="changeZoneBtn">Change</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-faint);margin-top:8px;">Sets which branch names show as suggestions on the Add tab. Doesn't affect anything already saved.</p>
+    </div>
+    <div class="panel">
       <div class="section-title">Export collected data</div>
       <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">
         Exports entries on this device as a CSV in the exact column format ASSETLINE expects
@@ -590,6 +598,20 @@ nav.tabbar{
       <div class="scanner-laser"></div>
     </div>
     <div class="hint" id="barcodeStatus" style="padding:12px 16px; margin-top:0;">Position the barcode or QR code within the frame…</div>
+  </div>
+</div>
+
+<div class="kit-overlay" id="zoneModal">
+  <div class="kit-box" style="max-width:420px;">
+    <div class="kit-head">
+      <div class="scanner-title">Select Zone</div>
+      <button class="modal-close" id="zoneCloseBtn" style="display:none;">✕</button>
+    </div>
+    <div class="kit-body">
+      <p id="zoneModalSubtitle" style="font-size:12.5px;color:var(--text-dim);line-height:1.6;margin-bottom:16px;"></p>
+      <button type="button" class="btn primary" id="zoneKrishnaBtn" style="margin-top:0;">Krishna</button>
+      <button type="button" class="btn primary" id="zoneWestGodavariBtn" style="margin-top:10px;">West Godavari</button>
+    </div>
   </div>
 </div>
 
@@ -1752,11 +1774,11 @@ document.getElementById('fCameraType').addEventListener('change', ()=>{
 document.getElementById('fName').addEventListener('input', ()=>{ tryAutoFillFromCatalog(); updateFieldSuggestions(); });
 document.getElementById('fName').addEventListener('change', ()=>{ tryAutoFillFromCatalog(); updateFieldSuggestions(); });
 
-/* Official NSPIRA branch list — powers the Branch suggestion dropdown.
-   Anything typed that isn't in this list still gets saved fine (e.g. a
-   brand-new branch), it just won't show as a suggestion until it's been
-   entered once on this device. */
-const BRANCHES = [
+/* Official NSPIRA branch lists, grouped by zone — power the Branch suggestion
+   dropdown for whichever zone is currently selected. Anything typed that
+   isn't in the list still gets saved fine (e.g. a brand-new branch), it just
+   won't show as a suggestion until it's been entered once on this device. */
+const BRANCHES_KRISHNA = [
   "AP-KRI-AVG-NSPIRA-S-5589",
   "AP-KRI-GDV-NSPIRA-C-6041",
   "AP-KRI-GDV-NSPIRA-S-5480",
@@ -1821,6 +1843,81 @@ const BRANCHES = [
   "AP-KRI-VIJ-KNR-NSPIRA-S-7421"
 ];
 
+const BRANCHES_WEST_GODAVARI = [
+  "AP-WG-AKVD-NSPIRA-S-5670",
+  "AP-WG-ELR-RRPET-NSPIRA-S-7092",
+  "AP-WG-ELR-NRPET-NSPIRA-S-7131",
+  "AP-WG-BVRM(B)-NSPIRA-C-6133",
+  "AP-WG-BVRM-NSPIRA-S-5785",
+  "AP-WG-BVRM(G)-NSPIRA-C-5905",
+  "AP-WG-ELR-NSPIRA-S-5784",
+  "AP-WG-ELR-NB(B)-NSPIRA-C-6223",
+  "AP-WG-ELR(G)-NSPIRA-C-5904",
+  "AP-WG-JRG-NSPIRA-S-5472",
+  "AP-WG-KVR-NSPIRA-S-5571",
+  "AP-WG-NSP-NSPIRA-S-5574",
+  "AP-WG-NDD-NSPIRA-S-5573",
+  "AP-WG-PKL-NSPIRA-S-5465",
+  "AP-WG-TNK-NSPIRA-C-6134",
+  "AP-WG-TNK-NSPIRA-S-5466",
+  "AP-WG-TPG-NSPIRA-S-5479",
+  "AP-WG-TPG-NSPIRA-C-6838",
+  "AP-WG-BVRM-GNPD-NSPIRA-S-7606"
+];
+
+const ZONES = {
+  "Krishna": BRANCHES_KRISHNA,
+  "West Godavari": BRANCHES_WEST_GODAVARI
+};
+
+const ZONE_STORE_KEY = 'assetline-collector-zone';
+let CURRENT_ZONE = null;
+
+function loadZone(){
+  try{ CURRENT_ZONE = localStorage.getItem(ZONE_STORE_KEY) || null; }
+  catch(e){ CURRENT_ZONE = null; }
+}
+
+function saveZone(zone){
+  CURRENT_ZONE = zone;
+  try{ localStorage.setItem(ZONE_STORE_KEY, zone); }catch(e){}
+}
+
+function currentZoneBranches(){
+  return ZONES[CURRENT_ZONE] || [];
+}
+
+function openZoneModal(isFirstRun){
+  const modal = document.getElementById('zoneModal');
+  document.getElementById('zoneCloseBtn').style.display = isFirstRun ? 'none' : 'inline-flex';
+  document.getElementById('zoneModalSubtitle').textContent = isFirstRun
+    ? 'Pick your zone once — this sets which branches show as suggestions. You can change it later from the Export tab.'
+    : 'Choose a different zone. This only changes which branches are suggested — nothing already saved is affected.';
+  modal.classList.add('active');
+}
+
+function closeZoneModal(){
+  document.getElementById('zoneModal').classList.remove('active');
+}
+
+function selectZone(zone){
+  saveZone(zone);
+  closeZoneModal();
+  refreshBranchList();
+  updateZoneDisplay();
+  showToast('Zone set to ' + zone);
+}
+
+function updateZoneDisplay(){
+  const el = document.getElementById('currentZoneLabel');
+  if(el) el.textContent = CURRENT_ZONE || 'Not set';
+}
+
+document.getElementById('zoneKrishnaBtn').addEventListener('click', ()=> selectZone('Krishna'));
+document.getElementById('zoneWestGodavariBtn').addEventListener('click', ()=> selectZone('West Godavari'));
+document.getElementById('zoneCloseBtn').addEventListener('click', closeZoneModal);
+document.getElementById('changeZoneBtn').addEventListener('click', ()=> openZoneModal(false));
+
 const FLOORS = [
   "Cellar",
   "Ground Floor",
@@ -1834,7 +1931,7 @@ const FLOORS = [
 
 function refreshBranchList(){
   const dynamic = ENTRIES.map(e=>e.branch);
-  const all = [...new Set([...BRANCHES, ...dynamic])].sort();
+  const all = [...new Set([...currentZoneBranches(), ...dynamic])].sort();
   document.getElementById('branchList').innerHTML = all.map(b=>`<option value="${escapeHtml(b)}">`).join('');
 }
 
@@ -2785,7 +2882,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v81';
+const APP_VERSION = 'nspira-it-collector-v82';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
@@ -2834,10 +2931,15 @@ if('serviceWorker' in navigator){
 /* ===== Init ===== */
 initSelects();
 document.getElementById('floorList').innerHTML = FLOORS.map(f=>`<option value="${escapeHtml(f)}">`).join('');
+loadZone();
 loadEntries();
 refreshBranchList();
+updateZoneDisplay();
 updateSyncBadge();
 initGeo();
+if(!CURRENT_ZONE){
+  openZoneModal(true);
+}
 </script>
 </body>
 </html>
