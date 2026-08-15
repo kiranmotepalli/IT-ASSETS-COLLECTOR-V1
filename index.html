@@ -611,6 +611,7 @@ nav.tabbar{
       <p id="zoneModalSubtitle" style="font-size:12.5px;color:var(--text-dim);line-height:1.6;margin-bottom:16px;"></p>
       <button type="button" class="btn primary" id="zoneKrishnaBtn" style="margin-top:0;">Krishna</button>
       <button type="button" class="btn primary" id="zoneWestGodavariBtn" style="margin-top:10px;">West Godavari</button>
+      <button type="button" class="btn primary" id="zoneNelloreBtn" style="margin-top:10px;">Nellore</button>
     </div>
   </div>
 </div>
@@ -1865,9 +1866,64 @@ const BRANCHES_WEST_GODAVARI = [
   "AP-WG-BVRM-GNPD-NSPIRA-S-7606"
 ];
 
+const BRANCHES_NELLORE = [
+  "AP-NLR-ADYBHVN(GH)-NSPIRA-C-7404",
+  "AP-NLR-ANC(B)-NSPIRA-C-5124",
+  "AP-NLR-ANC(G)-NSPIRA-C-5123",
+  "AP-NLR-ANCIIT-NSPIRA-C-5758",
+  "AP-NLR-BDVM-(BH)-NSPIRA-C-5130",
+  "AP-NLR-BDVM-CO-(BH)-NSPIRA-C-6396",
+  "AP-NLR-CG-(GH)-NSPIRA-C-5131",
+  "AP-NLR-DP-(BH)-NSPIRA-C-5128",
+  "AP-NLR-GDR-NSPIRA-C-6114",
+  "AP-NLR-HPMED-CO-NSPIRA-S-6809",
+  "AP-NLR-HPMED-NSPIRA-C-5127",
+  "AP-NLR-HP-NSPIRA-C-5125",
+  "AP-NLR-KP-(GH)-NSPIRA-C-5911",
+  "AP-NLR-KVL-NSPIRA-C-6113",
+  "AP-NLR-NGB-NSPIRA-C-6808",
+  "AP-NLR-NK-(BH)-NSPIRA-C-5132",
+  "AP-NLR-PB-(BH)-NSPIRA-C-6987",
+  "AP-NLR-SLK-(BH)-NSPIRA-C-5134",
+  "AP-NLR-SP-NSPIRA-C-5126",
+  "AP-NLR-SVN-(GH)-NSPIRA-C-5860",
+  "AP-NLR-VDP-NSPIRA-C-6018",
+  "AP-NLR-SVN-(GH)-NSPIRA-C-5860 LT",
+  "AP-NLR-BN-NSPIRA-S-6937",
+  "AP-NLR-BRDPM-NSPIRA-S-5610",
+  "AP-NLR-DP-(H)-NSPIRA-S-6127",
+  "AP-NLR-DPHS-NSPIRA-S-(GH)-5601",
+  "AP-NLR-DP-NSPIRA-S(H)-5912",
+  "AP-NLR-DP-NSPIRA-S-6302",
+  "AP-NLR-DPVP-RTN-NSPIRA-S-7401",
+  "AP-NLR-FKP-NSPIRA-S-6373",
+  "AP-NLR-GDR-NSPIRA-S-5471",
+  "AP-NLR-GPS-NSPIRA-S-6916",
+  "AP-NLR-KVL-NSPIRA-S-5490",
+  "AP-NLR-KVLRMC-NSPIRA-S-6786",
+  "AP-NLR-KVR-NSPIRA-S-6787",
+  "AP-NLR-MR-NSPIRA-S-7408",
+  "AP-NLR-NGB-NSPIRA-S-6392",
+  "AP-NLR-NSPIRA-S-5136",
+  "AP-NLR-NYPT-NSPIRA-S-5581",
+  "AP-NLR-PDLKR-NSPIRA-S-6834",
+  "AP-NLR-RN-NSPIRA-S-5138",
+  "AP-NLR-SLRPT-NSPIRA-S-5608",
+  "AP-NLR-SP-NSPIRA-S-5582",
+  "AP-NLR-VDP-NSPIRA-S-5586",
+  "AP-NLR-VJMR-NSPIRA-S-5783",
+  "AP-NLR-VKTGR-NSPIRA-S-5609",
+  "AP-NLR-HP(H)-NSPIRA-S-7522",
+  "AP-NLR-ANNAPURNA BDVM-NSPIRA-7352(Central Kitchen)",
+  "AP-NLR-BAKERY",
+  "NLR-VEG -CUTTING-WH -5862",
+  "AP-NLR-DO-STORE"
+];
+
 const ZONES = {
   "Krishna": BRANCHES_KRISHNA,
-  "West Godavari": BRANCHES_WEST_GODAVARI
+  "West Godavari": BRANCHES_WEST_GODAVARI,
+  "Nellore": BRANCHES_NELLORE
 };
 
 const ZONE_STORE_KEY = 'assetline-collector-zone';
@@ -1915,6 +1971,7 @@ function updateZoneDisplay(){
 
 document.getElementById('zoneKrishnaBtn').addEventListener('click', ()=> selectZone('Krishna'));
 document.getElementById('zoneWestGodavariBtn').addEventListener('click', ()=> selectZone('West Godavari'));
+document.getElementById('zoneNelloreBtn').addEventListener('click', ()=> selectZone('Nellore'));
 document.getElementById('zoneCloseBtn').addEventListener('click', closeZoneModal);
 document.getElementById('changeZoneBtn').addEventListener('click', ()=> openZoneModal(false));
 
@@ -2882,7 +2939,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v82';
+const APP_VERSION = 'nspira-it-collector-v83';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
