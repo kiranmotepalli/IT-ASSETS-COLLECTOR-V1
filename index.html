@@ -119,12 +119,15 @@ textarea{ min-height:60px; resize:vertical; }
 .pill.bad{ background:var(--red-dim); color:var(--red); }
 .pill .d{ width:5px; height:5px; border-radius:50%; background:currentColor; }
 .entry-actions{ display:flex; gap:8px; margin-top:11px; }
+.entry-actions .icon-btn{ flex:1; text-align:center; }
 .icon-btn{
   background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:6px 12px;
   border-radius:var(--radius-sm); font-size:12px; cursor:pointer; transition: border-color .15s var(--ease);
 }
 .icon-btn.danger{ color:var(--red); border-color:#5a2a2a; }
 .icon-btn.danger:active{ background:var(--red-dim); }
+.icon-btn.accent{ color:var(--amber); border-color:#5a441f; }
+.icon-btn.accent:active{ background:var(--amber-dim); }
 
 .search-row{ display:flex; gap:8px; margin-bottom:12px; }
 .search-row input{ flex:1; }
@@ -140,6 +143,18 @@ textarea{ min-height:60px; resize:vertical; }
 .kpi::before{ content:''; position:absolute; top:0; left:0; width:100%; height:2.5px; background:var(--kpi-accent, var(--amber)); }
 .kpi .lbl{ font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.06em; font-weight:700; }
 .kpi .val{ font-family:var(--mono); font-size:19px; font-weight:700; margin-top:4px; }
+.kpi-tap{ cursor:pointer; transition: border-color .15s var(--ease), transform .1s var(--ease); }
+.kpi-tap:active{ transform:scale(0.97); }
+.kpi-active{ border-color:var(--kpi-accent, var(--amber)); }
+
+.active-filter-chip{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:var(--amber-dim); border:1px solid #5a441f; color:var(--amber-soft);
+  border-radius:var(--radius-sm); padding:9px 12px; margin-bottom:12px; font-size:12.5px; font-weight:600;
+}
+.active-filter-chip button{
+  background:transparent; border:none; color:var(--amber-soft); font-size:12px; font-weight:700; cursor:pointer;
+}
 
 .field-with-btn{ display:flex; gap:8px; }
 .suggest-box{
@@ -210,6 +225,10 @@ textarea{ min-height:60px; resize:vertical; }
   align-items:flex-end; justify-content:center; padding:0;
 }
 .kit-overlay.active{ display:flex; }
+/* Custom Role Kit modal can open while the Quick Fill modal is still open
+   behind it — needs a higher z-index than the base .kit-overlay or it
+   renders underneath instead of on top (same bug the barcode scanner had) */
+#customRoleModal{ z-index:160; }
 .kit-box{
   width:100%; max-width:480px; max-height:92vh; background:var(--panel); border:1px solid var(--border);
   border-radius:20px 20px 0 0; overflow:hidden; box-shadow:0 -10px 40px -10px rgba(0,0,0,0.6);
@@ -227,6 +246,17 @@ textarea{ min-height:60px; resize:vertical; }
 .kit-item-name{ font-weight:700; font-size:14.5px; flex:1; }
 .kit-item-cat{ font-family:var(--mono); font-size:9.5px; color:var(--text-faint); }
 .kit-item-fields{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.zone-choice{
+  width:100%; display:flex; align-items:center; gap:12px; text-align:left;
+  background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+  padding:14px 16px; border-radius:var(--radius-sm); font-size:15px; font-weight:700;
+  cursor:pointer; margin-top:10px; transition: border-color .15s var(--ease), background .15s var(--ease);
+}
+.zone-choice:first-of-type{ margin-top:0; }
+.zone-choice:active{ border-color:var(--amber); background:var(--amber-dim); }
+.zone-choice-ic{ font-size:20px; flex-shrink:0; }
+.zone-choice-label{ flex:1; }
+.zone-choice-arrow{ color:var(--text-faint); font-size:18px; }
 .kit-item-fields input{ font-size:13px; padding:9px 10px; }
 .kit-item-fields label{ font-size:10px; margin:0 0 4px 0; }
 
@@ -238,6 +268,24 @@ textarea{ min-height:60px; resize:vertical; }
   box-shadow:0 10px 30px -10px rgba(0,0,0,0.5);
 }
 .toast.show{ opacity:1; transform:translateY(0); }
+
+.undo-bar{
+  position:fixed; left:16px; right:16px; bottom: calc(78px + env(safe-area-inset-bottom,0px));
+  background:var(--panel-3); border:1px solid var(--border); color:var(--text);
+  padding:13px 14px 13px 16px; border-radius:var(--radius-sm); z-index:200;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  font-size:13px; font-weight:600;
+  opacity:0; transform:translateY(10px); transition: all .25s var(--ease); pointer-events:none;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,0.6);
+}
+.undo-bar.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
+.undo-bar #undoBarBtn{
+  background:transparent; border:none; color:var(--amber); font-size:13px; font-weight:800;
+  letter-spacing:0.03em; cursor:pointer; flex-shrink:0;
+}
+.undo-bar #undoBarDismiss{
+  background:transparent; border:none; color:var(--text-faint); font-size:13px; cursor:pointer; flex-shrink:0;
+}
 
 nav.tabbar{
   position:fixed; left:0; right:0; bottom:0; z-index:50;
@@ -293,7 +341,7 @@ nav.tabbar{
     <div class="geo-badge" id="geoBadge">📍 Getting location…</div>
 
     <div class="panel" id="roleKitPanel">
-      <div class="section-title">Quick fill — role kit</div>
+      <div class="section-title">⚡ Quick fill — role kit</div>
       <p style="font-size:12.5px;color:var(--text-dim);line-height:1.6;margin-bottom:12px;">
         For a user's full set of equipment (e.g. Accountant, Operator, Principal) — pick the role and it lists every item that role gets. Fill in model/serial per item and save them all together.
       </p>
@@ -311,11 +359,12 @@ nav.tabbar{
     </div>
 
     <div class="panel">
-      <div class="section-title">New asset entry</div>
+      <div class="section-title">📋 New asset entry</div>
 
       <label>Branch *</label>
       <input type="text" id="fBranch" list="branchList" placeholder="e.g. AP-KRI-VIJ-NELITE-NSPIRA-C-5182">
       <datalist id="branchList"></datalist>
+      <div class="hint" id="lastBranchChip" style="display:none; cursor:pointer;" onclick="useLastBranch()">↺ Last used: <b id="lastBranchChipText" style="color:var(--amber);"></b> — tap to fill</div>
 
       <div class="row2">
         <div>
@@ -395,7 +444,7 @@ nav.tabbar{
       </div>
 
       <div id="laptopSection" style="display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
-        <div class="section-title" style="color:var(--amber);">Laptop Assignment</div>
+        <div class="section-title" style="color:var(--amber);">🪪 Laptop Assignment</div>
         <div class="row2">
           <div>
             <label>Global ID</label>
@@ -416,7 +465,7 @@ nav.tabbar{
       </div>
 
       <div id="systemConfigSection" style="display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
-        <div class="section-title" style="color:var(--amber);">Hardware Configuration</div>
+        <div class="section-title" style="color:var(--amber);">🖥️ Hardware Configuration</div>
         <div class="row2">
           <div>
             <label>Processor</label>
@@ -471,7 +520,7 @@ nav.tabbar{
       </div>
 
       <div id="accessoriesSection" style="display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
-        <div class="section-title" style="color:var(--amber);">Included Accessories</div>
+        <div class="section-title" style="color:var(--amber);">⌨️ Included Accessories</div>
         <div class="accessory-row">
           <div class="accessory-item">
             <label class="accessory-check">
@@ -489,7 +538,7 @@ nav.tabbar{
       </div>
 
       <div id="nvrStorageSection" style="display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
-        <div class="section-title" style="color:var(--amber);">Storage Configuration</div>
+        <div class="section-title" style="color:var(--amber);">💾 Storage Configuration</div>
         <div class="row2">
           <div>
             <label>Storage Capacity</label>
@@ -530,21 +579,25 @@ nav.tabbar{
     <div class="search-row">
       <input type="text" id="searchBox" placeholder="Search branch, room, name, serial…">
     </div>
+    <div class="active-filter-chip" id="activeFilterChip" style="display:none;">
+      <span id="activeFilterChipLabel"></span>
+      <button type="button" onclick="clearEntriesFilters()">✕ Clear</button>
+    </div>
     <div id="entriesList"></div>
   </div>
 
   <!-- EXPORT -->
   <div class="view" id="view-export">
     <div class="panel">
-      <div class="section-title">Zone</div>
+      <div class="section-title">🗺️ Zone</div>
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-        <div style="font-size:14px;">Current zone: <b id="currentZoneLabel" style="color:var(--amber);">—</b></div>
+        <div style="font-size:14px;">📍 Current zone: <b id="currentZoneLabel" style="color:var(--amber);">—</b></div>
         <button type="button" class="btn small ghost" id="changeZoneBtn">Change</button>
       </div>
       <p style="font-size:12px;color:var(--text-faint);margin-top:8px;">Sets which branch names show as suggestions on the Add tab. Doesn't affect anything already saved.</p>
     </div>
     <div class="panel">
-      <div class="section-title">Export collected data</div>
+      <div class="section-title">⬇️ Export collected data</div>
       <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">
         Exports entries on this device as a CSV in the exact column format ASSETLINE expects
         (Branch, Floor, Room / Area, Asset Category, Asset Name, Make, Model, Serial No, Quantity, Status, Remarks, Global ID, Employee Name, Employee Phone, Processor, RAM, Storage (GB), Storage Type, HDD Storage, Keyboard Qty, Mouse Qty, NVR/DVR Storage, GPS Location).
@@ -558,7 +611,7 @@ nav.tabbar{
       <button class="btn primary" id="exportBtn">↓ Export CSV (<span id="exportCount">0</span> entries)</button>
     </div>
     <div class="panel">
-      <div class="section-title">Restore from CSV</div>
+      <div class="section-title">📥 Restore from CSV</div>
       <p style="font-size:12.5px;color:var(--text-dim);line-height:1.6;">
         If this device's data ever gets cleared by accident, or you're setting up a fresh
         phone, restore entries from a CSV you exported earlier — using the exact file this
@@ -572,7 +625,21 @@ nav.tabbar{
       <div class="hint" id="restoreStatus" style="display:none;"></div>
     </div>
     <div class="panel">
-      <div class="section-title">Danger zone</div>
+      <div class="section-title">🗑️ Trash</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <p style="font-size:12.5px;color:var(--text-dim);margin:0;">
+          Deleted entries stay here for 7 days before being removed for good.
+          <b id="trashCount" style="color:var(--amber);">0</b> item(s) currently in Trash.
+        </p>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button type="button" class="btn ghost small" style="flex:1;" onclick="toggleTrashList()">View / Restore</button>
+        <button type="button" class="btn danger small" id="emptyTrashBtn" style="display:none; flex:1;" onclick="emptyTrash()">Empty Trash</button>
+      </div>
+      <div id="trashList" style="display:none; margin-top:12px;"></div>
+    </div>
+    <div class="panel">
+      <div class="section-title">⚠️ Danger zone</div>
       <p style="font-size:12.5px;color:var(--text-dim);">Clears every entry saved on this device. Export first if you need a copy.</p>
       <button class="btn danger" id="clearBtn">Clear all entries</button>
     </div>
@@ -585,6 +652,14 @@ nav.tabbar{
 </main>
 
 <div class="toast" id="toast"></div>
+
+<div class="undo-bar" id="undoBar">
+  <span id="undoBarText"></span>
+  <div style="display:flex; gap:14px; align-items:center;">
+    <button type="button" id="undoBarBtn">UNDO</button>
+    <button type="button" id="undoBarDismiss" aria-label="Dismiss">✕</button>
+  </div>
+</div>
 
 <div class="scanner-overlay" id="barcodeModal">
   <div class="scanner-box">
@@ -604,14 +679,62 @@ nav.tabbar{
 <div class="kit-overlay" id="zoneModal">
   <div class="kit-box" style="max-width:420px;">
     <div class="kit-head">
-      <div class="scanner-title">Select Zone</div>
+      <div class="scanner-title">📍 Select Zone</div>
       <button class="modal-close" id="zoneCloseBtn" style="display:none;">✕</button>
     </div>
     <div class="kit-body">
       <p id="zoneModalSubtitle" style="font-size:12.5px;color:var(--text-dim);line-height:1.6;margin-bottom:16px;"></p>
-      <button type="button" class="btn primary" id="zoneKrishnaBtn" style="margin-top:0;">Krishna</button>
-      <button type="button" class="btn primary" id="zoneWestGodavariBtn" style="margin-top:10px;">West Godavari</button>
-      <button type="button" class="btn primary" id="zoneNelloreBtn" style="margin-top:10px;">Nellore</button>
+      <button type="button" class="zone-choice" id="zoneKrishnaBtn">
+        <span class="zone-choice-ic">🌊</span>
+        <span class="zone-choice-label">Krishna</span>
+        <span class="zone-choice-arrow">›</span>
+      </button>
+      <button type="button" class="zone-choice" id="zoneWestGodavariBtn">
+        <span class="zone-choice-ic">🌾</span>
+        <span class="zone-choice-label">West Godavari</span>
+        <span class="zone-choice-arrow">›</span>
+      </button>
+      <button type="button" class="zone-choice" id="zoneNelloreBtn">
+        <span class="zone-choice-ic">🏖️</span>
+        <span class="zone-choice-label">Nellore</span>
+        <span class="zone-choice-arrow">›</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="kit-overlay" id="customRoleModal">
+  <div class="kit-box">
+    <div class="kit-head">
+      <div class="scanner-title">⚙️ Custom Roles</div>
+      <button class="modal-close" id="closeCustomRoleModal">✕</button>
+    </div>
+    <div class="kit-body">
+      <div id="existingCustomRolesList" style="margin-bottom:14px;"></div>
+
+      <div class="section-title" style="margin-top:0;">Create a new role</div>
+      <label>Role name *</label>
+      <input type="text" id="customRoleName" placeholder="e.g. Lab Assistant">
+
+      <label style="margin-top:12px;">Items in this role</label>
+      <div id="customRoleItemsList"></div>
+      <div class="row2" style="margin-top:8px;">
+        <div>
+          <select id="customRoleItemCategory"></select>
+        </div>
+        <div>
+          <input type="text" id="customRoleItemLabel" placeholder="Item label, e.g. Printer">
+        </div>
+      </div>
+      <button type="button" class="btn ghost small" id="addCustomRoleItemBtn" style="margin-top:8px;">+ Add item</button>
+
+      <p style="font-size:11.5px;color:var(--text-faint);margin-top:10px;line-height:1.5;">
+        Tip: items under System, or CCTV Camera automatically get the same
+        keyboard/mouse + hardware config, or camera type + name presets, as the
+        built-in roles — no extra setup needed.
+      </p>
+
+      <button type="button" class="btn primary" id="saveCustomRoleBtn" style="margin-top:14px;">Save Role</button>
     </div>
   </div>
 </div>
@@ -635,10 +758,13 @@ nav.tabbar{
         <option>Dean</option>
         <option>AV Room</option>
         <option>Computer Lab</option>
+        <optgroup label="Custom roles" id="customRoleOptGroup"></optgroup>
       </select>
+      <button type="button" class="btn ghost small" id="manageCustomRolesBtn" style="margin-top:8px;">⚙️ Create / manage custom roles</button>
 
       <label>Branch *</label>
       <input type="text" id="kitBranch" list="branchList" placeholder="e.g. AP-KRI-VIJ-NELITE-NSPIRA-C-5182">
+      <div class="hint" id="kitLastBranchChip" style="display:none; cursor:pointer;" onclick="useLastBranchInKit()">↺ Last used: <b id="kitLastBranchChipText" style="color:var(--amber);"></b> — tap to fill</div>
       <div class="row2">
         <div>
           <label>Floor</label>
@@ -876,6 +1002,136 @@ ROLE_KITS["Dean"] = ROLE_KITS["Principal"];
 // Board gets the same equipment set as Accountant
 ROLE_KITS["Board"] = ROLE_KITS["Accountant"];
 
+/* ===== Custom roles — user-defined via the "Manage custom roles" builder =====
+   Stored as { roleName: [ {category, label}, ... ] }. Items automatically get
+   the same rich behavior as built-in roles based on their category alone
+   (System/Server → accessories + hardware config, CCTV Camera → full camera
+   picker) — no need to expose those toggles in the simple builder UI. */
+const CUSTOM_ROLES_KEY = 'assetline-custom-roles';
+let CUSTOM_ROLES = {};
+let buildingCustomRoleItems = [];
+
+function loadCustomRoles(){
+  try{ CUSTOM_ROLES = JSON.parse(localStorage.getItem(CUSTOM_ROLES_KEY) || '{}'); }
+  catch(e){ CUSTOM_ROLES = {}; }
+}
+function saveCustomRolesToStorage(){
+  try{ localStorage.setItem(CUSTOM_ROLES_KEY, JSON.stringify(CUSTOM_ROLES)); }catch(e){}
+}
+
+function decorateCustomRoleItem(item){
+  // infer the same rich behavior flags built-in roles use, purely from category
+  return {
+    category: item.category,
+    label: item.label,
+    accessories: (item.category === 'System'),
+    isCctvCamera: (item.category === 'CCTV Camera')
+  };
+}
+
+function getRoleItems(role){
+  if(ROLE_KITS[role]) return ROLE_KITS[role];
+  if(CUSTOM_ROLES[role]) return CUSTOM_ROLES[role].map(decorateCustomRoleItem);
+  return [];
+}
+
+function refreshCustomRoleOptGroup(){
+  const grp = document.getElementById('customRoleOptGroup');
+  const names = Object.keys(CUSTOM_ROLES).sort();
+  grp.innerHTML = names.map(n=>`<option>${escapeHtml(n)}</option>`).join('');
+}
+
+function openCustomRoleModal(){
+  buildingCustomRoleItems = [];
+  document.getElementById('customRoleName').value = '';
+  document.getElementById('customRoleItemLabel').value = '';
+  renderCustomRoleItemsBuilder();
+  renderExistingCustomRoles();
+  document.getElementById('customRoleModal').classList.add('active');
+}
+function closeCustomRoleModal(){
+  document.getElementById('customRoleModal').classList.remove('active');
+}
+
+function jsStringEscape(s){
+  // for safely embedding a value inside a single-quoted string in an inline
+  // onclick — HTML-escaping alone isn't enough here, since the browser
+  // decodes HTML entities in attributes before the onclick JS ever runs,
+  // which would let a literal apostrophe break out of the string early
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+function renderExistingCustomRoles(){
+  const names = Object.keys(CUSTOM_ROLES).sort();
+  const el = document.getElementById('existingCustomRolesList');
+  if(names.length === 0){
+    el.innerHTML = `<p style="font-size:12px;color:var(--text-faint);">No custom roles yet — build one below.</p>`;
+    return;
+  }
+  el.innerHTML = `<label style="margin-bottom:6px;">Existing custom roles</label>` + names.map(n=>`
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px;">
+      <span style="font-size:13.5px; font-weight:700;">${escapeHtml(n)} <span style="font-weight:400;color:var(--text-faint);">(${CUSTOM_ROLES[n].length} item${CUSTOM_ROLES[n].length!==1?'s':''})</span></span>
+      <button type="button" class="icon-btn danger" style="padding:5px 10px;" onclick="deleteCustomRole('${jsStringEscape(n)}')">Delete</button>
+    </div>`).join('');
+}
+
+function deleteCustomRole(name){
+  if(!confirm(`Delete the custom role "${name}"? This doesn't affect any entries already saved.`)) return;
+  delete CUSTOM_ROLES[name];
+  saveCustomRolesToStorage();
+  refreshCustomRoleOptGroup();
+  renderExistingCustomRoles();
+  showToast('Custom role deleted');
+}
+
+function renderCustomRoleItemsBuilder(){
+  const el = document.getElementById('customRoleItemsList');
+  if(buildingCustomRoleItems.length === 0){
+    el.innerHTML = `<p style="font-size:12px;color:var(--text-faint);">No items added yet.</p>`;
+    return;
+  }
+  el.innerHTML = buildingCustomRoleItems.map((it, idx)=> `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:6px;">
+      <span style="font-size:13px;"><b>${escapeHtml(it.label)}</b> <span style="color:var(--text-faint);">— ${escapeHtml(it.category)}</span></span>
+      <button type="button" style="background:transparent;border:none;color:var(--red);font-size:16px;cursor:pointer;" onclick="removeCustomRoleItem(${idx})">✕</button>
+    </div>`).join('');
+}
+
+function removeCustomRoleItem(idx){
+  buildingCustomRoleItems.splice(idx, 1);
+  renderCustomRoleItemsBuilder();
+}
+
+document.getElementById('manageCustomRolesBtn').addEventListener('click', openCustomRoleModal);
+document.getElementById('closeCustomRoleModal').addEventListener('click', closeCustomRoleModal);
+
+document.getElementById('addCustomRoleItemBtn').addEventListener('click', ()=>{
+  const category = document.getElementById('customRoleItemCategory').value;
+  const label = document.getElementById('customRoleItemLabel').value.trim();
+  if(!category || !label){
+    showToast('Pick a category and type a label first', true);
+    return;
+  }
+  buildingCustomRoleItems.push({ category, label });
+  document.getElementById('customRoleItemLabel').value = '';
+  renderCustomRoleItemsBuilder();
+});
+
+document.getElementById('saveCustomRoleBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('customRoleName').value.trim();
+  if(!name){ showToast('Give the role a name first', true); return; }
+  if(buildingCustomRoleItems.length === 0){ showToast('Add at least one item first', true); return; }
+  if(ROLE_KITS[name]){ showToast('That name is already a built-in role — pick a different name', true); return; }
+
+  CUSTOM_ROLES[name] = buildingCustomRoleItems.slice();
+  saveCustomRolesToStorage();
+  refreshCustomRoleOptGroup();
+  closeCustomRoleModal();
+  showToast(`"${name}" role saved`);
+  document.getElementById('kitRole').value = name;
+  renderKitItems(name);
+});
+
 function openRoleKitModal(){
   document.getElementById('roleKitModal').classList.add('active');
   document.getElementById('kitRole').value = '';
@@ -885,6 +1141,7 @@ function openRoleKitModal(){
   document.getElementById('kitEmpName').value = '';
   document.getElementById('kitItemsList').innerHTML = '';
   document.getElementById('kitStatus').style.display = 'none';
+  updateKitLastBranchChip();
 }
 
 function closeRoleKitModal(){
@@ -896,7 +1153,7 @@ const KIT_MONITOR_SIZES = ["14 Inch", "18.5 Inch", "19.5 Inch"];
 const KIT_PRINTER_MODELS = ["LaserJet Pro MFP M329dw", "LaserJet Pro MFP M128fn", "LaserJet 1020 Plus", "LBP2900B"];
 
 function renderKitItems(role){
-  const items = ROLE_KITS[role] || [];
+  const items = getRoleItems(role);
   document.getElementById('kitItemsList').innerHTML = items.map((item, idx)=>{
     if(item.freeform){
       return `
@@ -1381,7 +1638,9 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
     return;
   }
 
-  const items = ROLE_KITS[role] || [];
+  rememberLastBranch(branch);
+
+  const items = getRoleItems(role);
   const rows = document.querySelectorAll('#kitItemsList .kit-item');
   let saved = 0;
 
@@ -1501,6 +1760,7 @@ document.getElementById('saveKitBtn').addEventListener('click', ()=>{
 function initSelects(){
   document.getElementById('fCategory').innerHTML += CATEGORIES.map(c=>`<option>${c}</option>`).join('');
   document.getElementById('fStatus').innerHTML = STATUSES.map(s=>`<option ${s==='Working'?'selected':''}>${s}</option>`).join('');
+  document.getElementById('customRoleItemCategory').innerHTML = '<option value="">Category…</option>' + CATEGORIES.map(c=>`<option>${c}</option>`).join('');
 }
 
 /* Asset Name autocomplete — a custom dropdown instead of the native <datalist>,
@@ -1992,6 +2252,59 @@ function refreshBranchList(){
   document.getElementById('branchList').innerHTML = all.map(b=>`<option value="${escapeHtml(b)}">`).join('');
 }
 
+/* "Last used branch" shortcut — shown only when the Branch field is empty,
+   so it doesn't get in the way once a branch is already picked/typed. */
+const LAST_BRANCH_KEY = 'assetline-last-branch';
+
+function rememberLastBranch(branch){
+  if(!branch) return;
+  try{ localStorage.setItem(LAST_BRANCH_KEY, branch); }catch(e){}
+}
+
+function getLastBranch(){
+  try{ return localStorage.getItem(LAST_BRANCH_KEY) || ''; }catch(e){ return ''; }
+}
+
+function updateLastBranchChip(){
+  const chip = document.getElementById('lastBranchChip');
+  const fBranch = document.getElementById('fBranch');
+  const last = getLastBranch();
+  if(!fBranch.value.trim() && last){
+    document.getElementById('lastBranchChipText').textContent = last;
+    chip.style.display = 'block';
+  } else {
+    chip.style.display = 'none';
+  }
+}
+
+function useLastBranch(){
+  const last = getLastBranch();
+  if(!last) return;
+  document.getElementById('fBranch').value = last;
+  updateLastBranchChip();
+}
+document.getElementById('fBranch').addEventListener('input', updateLastBranchChip);
+
+/* Same "last used branch" shortcut, mirrored onto the Quick Fill by Role modal */
+function updateKitLastBranchChip(){
+  const chip = document.getElementById('kitLastBranchChip');
+  const kitBranch = document.getElementById('kitBranch');
+  const last = getLastBranch();
+  if(!kitBranch.value.trim() && last){
+    document.getElementById('kitLastBranchChipText').textContent = last;
+    chip.style.display = 'block';
+  } else {
+    chip.style.display = 'none';
+  }
+}
+function useLastBranchInKit(){
+  const last = getLastBranch();
+  if(!last) return;
+  document.getElementById('kitBranch').value = last;
+  updateKitLastBranchChip();
+}
+document.getElementById('kitBranch').addEventListener('input', updateKitLastBranchChip);
+
 function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ===== Tabs ===== */
@@ -2203,6 +2516,8 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     return;
   }
 
+  rememberLastBranch(branch);
+
   const isSystem = category === 'System';
   const isLaptop = category === 'Laptop';
   const isServer = category === 'Server';
@@ -2391,6 +2706,7 @@ document.getElementById('clearBtnForm').addEventListener('click', ()=>{
   toggleSystemConfig();
   document.getElementById('fBranch').focus();
   showToast('Form cleared');
+  updateLastBranchChip();
 });
 
 /* ===== Entries list ===== */
@@ -2414,7 +2730,7 @@ function entryCardHtml(e, showBranchTag){
     ${e.nvrStorage ? `<div class="entry-meta" style="margin-top:6px;">💾 Storage: ${escapeHtml(e.nvrStorage)}</div>` : ''}
     ${(e.geoLat!=null && e.geoLng!=null) ? `<div class="entry-meta" style="margin-top:4px;"><a href="https://maps.google.com/?q=${e.geoLat},${e.geoLng}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:none;">📍 View location on map ${e.geoAcc?('(±'+e.geoAcc+'m)'):''}</a></div>` : ''}
     <div class="entry-actions">
-      <button class="icon-btn" onclick="editEntry('${e.id}')">✎ Edit</button>
+      <button class="icon-btn accent" onclick="editEntry('${e.id}')">✎ Edit</button>
       <button class="icon-btn" onclick="copyEntry('${e.id}')">⧉ Copy</button>
       <button class="icon-btn danger" onclick="deleteEntry('${e.id}')">Delete</button>
     </div>
@@ -2428,19 +2744,41 @@ function toggleBranchGroup(encoded){
   renderEntries();
 }
 
+let entriesFilterMode = null; // null | 'flagged' — toggled by tapping the Flagged KPI
+
+function setEntriesFilter(mode){
+  entriesFilterMode = (entriesFilterMode === mode) ? null : mode; // tap again to clear
+  renderEntries();
+}
+
+function clearEntriesFilters(){
+  entriesFilterMode = null;
+  document.getElementById('searchBox').value = '';
+  renderEntries();
+}
+
 function renderEntries(){
   const totalQty = ENTRIES.reduce((s,e)=>s+(Number(e.qty)||0),0);
   const branches = new Set(ENTRIES.map(e=>e.branch)).size;
   const flagged = ENTRIES.filter(e=> e.status!=='Working').length;
+  const flaggedActive = entriesFilterMode === 'flagged';
 
   document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi" style="--kpi-accent:var(--amber)"><div class="lbl">Entries</div><div class="val">${ENTRIES.length}</div></div>
-    <div class="kpi" style="--kpi-accent:var(--teal)"><div class="lbl">Branches</div><div class="val">${branches}</div></div>
-    <div class="kpi" style="--kpi-accent:${flagged?'var(--red)':'var(--teal)'}"><div class="lbl">Flagged</div><div class="val" style="color:${flagged?'var(--red)':'var(--teal)'}">${flagged}</div></div>
+    <div class="kpi kpi-tap" style="--kpi-accent:var(--amber)" onclick="clearEntriesFilters()"><div class="lbl">Entries</div><div class="val">${ENTRIES.length}</div></div>
+    <div class="kpi kpi-tap" style="--kpi-accent:var(--teal)" onclick="clearEntriesFilters()"><div class="lbl">Branches</div><div class="val">${branches}</div></div>
+    <div class="kpi kpi-tap ${flaggedActive?'kpi-active':''}" style="--kpi-accent:${flagged?'var(--red)':'var(--teal)'}" onclick="setEntriesFilter('flagged')"><div class="lbl">Flagged${flaggedActive?' ✓':''}</div><div class="val" style="color:${flagged?'var(--red)':'var(--teal)'}">${flagged}</div></div>
   `;
+
+  if(entriesFilterMode){
+    document.getElementById('activeFilterChip').style.display = 'flex';
+    document.getElementById('activeFilterChipLabel').textContent = 'Showing: Flagged only';
+  } else {
+    document.getElementById('activeFilterChip').style.display = 'none';
+  }
 
   const q = (document.getElementById('searchBox').value||'').toLowerCase();
   const rows = ENTRIES.filter(e=>{
+    if(entriesFilterMode === 'flagged' && e.status === 'Working') return false;
     if(!q) return true;
     return [e.branch,e.floor,e.room,e.category,e.name,e.make,e.serial].join(' ').toLowerCase().includes(q);
   });
@@ -2475,27 +2813,172 @@ function renderEntries(){
   document.getElementById('entriesList').innerHTML = html;
 }
 
+/* ===== Trash — deleted entries stay recoverable for 7 days =====
+   Both single-entry delete and branch delete move entries here instead of
+   destroying them immediately. The undo bar (8s) is the fast path; the
+   Trash panel on the Export tab is the longer-term safety net. */
+const TRASH_KEY = 'assetline-collector-trash';
+const TRASH_RETENTION_DAYS = 7;
+let TRASH = [];
+
+function loadTrash(){
+  try{ TRASH = JSON.parse(localStorage.getItem(TRASH_KEY) || '[]'); }
+  catch(e){ TRASH = []; }
+  purgeOldTrash();
+}
+function saveTrash(){
+  try{ localStorage.setItem(TRASH_KEY, JSON.stringify(TRASH)); }catch(e){}
+}
+function purgeOldTrash(){
+  const cutoff = Date.now() - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const before = TRASH.length;
+  TRASH = TRASH.filter(t=> t.deletedAt > cutoff);
+  if(TRASH.length !== before) saveTrash();
+}
+
+function moveToTrash(entries){
+  const now = Date.now();
+  entries.forEach(e=> TRASH.unshift({ ...e, deletedAt: now }));
+  saveTrash();
+}
+
 function deleteEntry(id){
   if(!confirm('Delete this entry?')) return;
+  const removed = ENTRIES.filter(e=> e.id === id);
   ENTRIES = ENTRIES.filter(e=> e.id !== id);
+  moveToTrash(removed);
   saveEntries();
   refreshBranchList();
   updateSyncBadge();
   renderEntries();
+
+  lastDeleteBackup = { label: removed[0] ? removed[0].name : 'entry', entries: removed };
+  showUndoBar('Deleted 1 entry');
 }
+
+let lastDeleteBackup = null; // { label, entries: [...] } — cleared once the undo window expires
+let undoBarTimer = null;
 
 function deleteBranchEntries(encodedBranch){
   const branch = decodeURIComponent(encodedBranch);
-  const count = ENTRIES.filter(e=> e.branch === branch).length;
+  const removed = ENTRIES.filter(e=> e.branch === branch);
+  const count = removed.length;
   if(count === 0) return;
-  if(!confirm(`Delete all ${count} entr${count===1?'y':'ies'} for branch:\n\n${branch}\n\nThis cannot be undone. Export a CSV first if you need a copy.`)) return;
+  if(!confirm(`Delete all ${count} entr${count===1?'y':'ies'} for branch:\n\n${branch}\n\nYou'll have a few seconds to undo right after — and a longer-term copy stays in Trash for ${TRASH_RETENTION_DAYS} days.`)) return;
+
   ENTRIES = ENTRIES.filter(e=> e.branch !== branch);
   COLLAPSED.delete(branch);
+  moveToTrash(removed);
   saveEntries();
   refreshBranchList();
   updateSyncBadge();
   renderEntries();
-  showToast(`Deleted ${count} entr${count===1?'y':'ies'} for ${branch}`);
+
+  lastDeleteBackup = { label: branch, entries: removed };
+  showUndoBar(`Deleted ${count} entr${count===1?'y':'ies'} for ${branch}`);
+}
+
+function showUndoBar(message){
+  const bar = document.getElementById('undoBar');
+  document.getElementById('undoBarText').textContent = message;
+  bar.classList.add('show');
+  if(undoBarTimer) clearTimeout(undoBarTimer);
+  undoBarTimer = setTimeout(hideUndoBar, 8000);
+}
+
+function hideUndoBar(){
+  document.getElementById('undoBar').classList.remove('show');
+  lastDeleteBackup = null;
+  if(undoBarTimer){ clearTimeout(undoBarTimer); undoBarTimer = null; }
+}
+
+function undoLastDelete(){
+  if(!lastDeleteBackup) return;
+  const ids = new Set(lastDeleteBackup.entries.map(e=>e.id));
+  ENTRIES = [...lastDeleteBackup.entries, ...ENTRIES];
+  TRASH = TRASH.filter(t=> !ids.has(t.id)); // pull back out of Trash too, undo means undo
+  saveTrash();
+  saveEntries();
+  refreshBranchList();
+  updateSyncBadge();
+  renderEntries();
+  renderTrashPanel();
+  showToast(`Restored ${lastDeleteBackup.entries.length} entr${lastDeleteBackup.entries.length===1?'y':'ies'}`);
+  document.getElementById('undoBar').classList.remove('show');
+  if(undoBarTimer){ clearTimeout(undoBarTimer); undoBarTimer = null; }
+  lastDeleteBackup = null;
+}
+document.getElementById('undoBarBtn').addEventListener('click', undoLastDelete);
+document.getElementById('undoBarDismiss').addEventListener('click', hideUndoBar);
+
+/* ===== Trash panel (Export tab) ===== */
+function renderTrashPanel(){
+  purgeOldTrash();
+  const countEl = document.getElementById('trashCount');
+  if(countEl) countEl.textContent = TRASH.length;
+  const emptyBtn = document.getElementById('emptyTrashBtn');
+  if(emptyBtn) emptyBtn.style.display = TRASH.length ? 'inline-flex' : 'none';
+}
+
+function toggleTrashList(){
+  const list = document.getElementById('trashList');
+  const open = list.style.display === 'block';
+  if(open){
+    list.style.display = 'none';
+    return;
+  }
+  purgeOldTrash();
+  if(TRASH.length === 0){
+    list.innerHTML = `<p style="font-size:12px;color:var(--text-faint);padding:10px 0;">Trash is empty.</p>`;
+  } else {
+    list.innerHTML = TRASH.map(t=>{
+      const daysLeft = Math.max(0, TRASH_RETENTION_DAYS - Math.floor((Date.now()-t.deletedAt)/(24*60*60*1000)));
+      return `<div style="background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px;">
+        <div style="font-size:13px; font-weight:700;">${escapeHtml(t.name||'—')}</div>
+        <div style="font-size:11.5px; color:var(--text-faint); margin-top:2px;">${escapeHtml(t.branch||'')} · ${escapeHtml(t.category||'')} · auto-removed in ${daysLeft}d</div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button type="button" class="icon-btn" style="flex:1;" onclick="restoreFromTrash('${t.id}')">↺ Restore</button>
+          <button type="button" class="icon-btn danger" style="flex:1;" onclick="permanentlyDeleteFromTrash('${t.id}')">Delete forever</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  list.style.display = 'block';
+}
+
+function restoreFromTrash(id){
+  const item = TRASH.find(t=> t.id === id);
+  if(!item) return;
+  const { deletedAt, ...entry } = item;
+  ENTRIES.unshift(entry);
+  TRASH = TRASH.filter(t=> t.id !== id);
+  saveEntries();
+  saveTrash();
+  refreshBranchList();
+  updateSyncBadge();
+  renderEntries();
+  renderTrashPanel();
+  toggleTrashList(); toggleTrashList(); // refresh the open list in place
+  showToast('Entry restored');
+}
+
+function permanentlyDeleteFromTrash(id){
+  if(!confirm('Permanently delete this entry? This cannot be undone.')) return;
+  TRASH = TRASH.filter(t=> t.id !== id);
+  saveTrash();
+  renderTrashPanel();
+  toggleTrashList(); toggleTrashList();
+  showToast('Permanently deleted');
+}
+
+function emptyTrash(){
+  if(TRASH.length === 0) return;
+  if(!confirm(`Permanently delete all ${TRASH.length} items in Trash? This cannot be undone.`)) return;
+  TRASH = [];
+  saveTrash();
+  renderTrashPanel();
+  document.getElementById('trashList').style.display = 'none';
+  showToast('Trash emptied');
 }
 
 function ensureCategoryOptionExists(category){
@@ -2939,7 +3422,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v83';
+const APP_VERSION = 'nspira-it-collector-v90';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
@@ -2989,10 +3472,15 @@ if('serviceWorker' in navigator){
 initSelects();
 document.getElementById('floorList').innerHTML = FLOORS.map(f=>`<option value="${escapeHtml(f)}">`).join('');
 loadZone();
+loadCustomRoles();
+refreshCustomRoleOptGroup();
 loadEntries();
+loadTrash();
+renderTrashPanel();
 refreshBranchList();
 updateZoneDisplay();
 updateSyncBadge();
+updateLastBranchChip();
 initGeo();
 if(!CURRENT_ZONE){
   openZoneModal(true);
