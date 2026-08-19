@@ -595,6 +595,7 @@ nav.tabbar{
         <button type="button" class="btn small ghost" id="changeZoneBtn">Change</button>
       </div>
       <p style="font-size:12px;color:var(--text-faint);margin-top:8px;">Sets which branch names show as suggestions on the Add tab. Doesn't affect anything already saved.</p>
+      <p style="font-size:12px;margin-top:10px;" id="storagePersistNote"></p>
     </div>
     <div class="panel">
       <div class="section-title">⬇️ Export collected data</div>
@@ -3452,7 +3453,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v93';
+const APP_VERSION = 'nspira-it-collector-v94';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
@@ -3501,6 +3502,26 @@ if('serviceWorker' in navigator){
 /* ===== Init ===== */
 initSelects();
 document.getElementById('floorList').innerHTML = FLOORS.map(f=>`<option value="${escapeHtml(f)}">`).join('');
+
+// Ask the browser to protect this site's storage from automatic eviction —
+// without this, the browser can silently wipe localStorage (which is where
+// every entry, plus the zone setting, actually lives) under storage
+// pressure, with no warning and no user action involved. This is best-effort
+// (the browser can still say no) but meaningfully reduces the risk.
+if(navigator.storage && navigator.storage.persist){
+  navigator.storage.persist().catch(()=>{});
+}
+if(navigator.storage && navigator.storage.persisted){
+  navigator.storage.persisted().then(isPersisted=>{
+    const el = document.getElementById('storagePersistNote');
+    if(!el) return;
+    el.style.color = isPersisted ? 'var(--teal)' : 'var(--red)';
+    el.textContent = isPersisted
+      ? '✓ Storage protection: on — this device\'s browser has agreed to protect this app\'s saved data from automatic cleanup.'
+      : '⚠ Storage protection: not granted by this browser — saved data on this device is more exposed to being cleared automatically under low storage. Export CSV backups regularly as a safety net.';
+  }).catch(()=>{});
+}
+
 loadZone();
 loadCustomRoles();
 refreshCustomRoleOptGroup();
