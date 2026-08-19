@@ -3234,7 +3234,12 @@ document.getElementById('restoreFileInput').addEventListener('change', (e)=>{
   const reader = new FileReader();
   reader.onload = (evt)=>{
     try{
-      const rows = parseCsvFile(evt.target.result);
+      // strip a UTF-8 BOM if present — Excel/Google Sheets often add one when
+      // re-saving a CSV, which would otherwise make "Branch" fail to match
+      // as the very first header cell and wrongly reject a valid file
+      let text = evt.target.result;
+      if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const rows = parseCsvFile(text);
       if(rows.length < 2){
         statusEl.style.color = 'var(--red)';
         statusEl.textContent = 'No data rows found in that file.';
@@ -3309,8 +3314,8 @@ document.getElementById('restoreFileInput').addEventListener('change', (e)=>{
           hasHdd: !!((iHddStorage>-1 ? cols[iHddStorage] : '')||'').trim(),
           keyboardQty: (iKbQty>-1 ? cols[iKbQty] : '') || '',
           mouseQty: (iMouseQty>-1 ? cols[iMouseQty] : '') || '',
-          hasKeyboard: !!((iKbQty>-1 ? cols[iKbQty] : '')||'').trim(),
-          hasMouse: !!((iMouseQty>-1 ? cols[iMouseQty] : '')||'').trim(),
+          hasKeyboard: (()=>{ const v=(iKbQty>-1?cols[iKbQty]:'').trim(); return v !== '' && v !== '0'; })(),
+          hasMouse: (()=>{ const v=(iMouseQty>-1?cols[iMouseQty]:'').trim(); return v !== '' && v !== '0'; })(),
           nvrStorage: (iNvrStorage>-1 ? cols[iNvrStorage] : '') || '',
           geoLat, geoLng, geoAcc: null,
           ts: new Date().toISOString()
@@ -3447,7 +3452,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v92';
+const APP_VERSION = 'nspira-it-collector-v93';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
