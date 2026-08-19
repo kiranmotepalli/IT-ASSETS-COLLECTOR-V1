@@ -3248,8 +3248,8 @@ document.getElementById('restoreFileInput').addEventListener('change', (e)=>{
         return;
       }
 
-      const existingKeys = new Set(ENTRIES.map(restoreEntryKey));
-      let added = 0, skipped = 0;
+      const existingByKey = new Map(ENTRIES.map(e=> [restoreEntryKey(e), e]));
+      let added = 0, skipped = 0, updated = 0;
 
       for(let r=1; r<rows.length; r++){
         const cols = rows[r];
@@ -3299,24 +3299,49 @@ document.getElementById('restoreFileInput').addEventListener('change', (e)=>{
         };
 
         const key = restoreEntryKey(entry);
-        if(existingKeys.has(key)){ skipped++; continue; }
-        existingKeys.add(key);
+        const existing = existingByKey.get(key);
+        if(existing){
+          // same branch/floor/room/category/name/model/serial already exists —
+          // but the file might carry newer info (status change, remarks, etc.)
+          // that the on-device copy doesn't have yet, so update it in place
+          // instead of silently discarding the file's version
+          const {id, ts, geoLat, geoLng, geoAcc, ...incomingWithoutIdentity} = entry;
+          if(geoLat != null && geoLng != null){
+            // only carry GPS over if the file actually has it — don't blow
+            // away real on-device coordinates just because this row's GPS
+            // column was blank
+            incomingWithoutIdentity.geoLat = geoLat;
+            incomingWithoutIdentity.geoLng = geoLng;
+            incomingWithoutIdentity.geoAcc = geoAcc;
+          }
+          const changed = Object.keys(incomingWithoutIdentity).some(k=> String(existing[k] ?? '') !== String(incomingWithoutIdentity[k] ?? ''));
+          if(changed){
+            Object.assign(existing, incomingWithoutIdentity);
+            updated++;
+          } else {
+            skipped++;
+          }
+          continue;
+        }
+        existingByKey.set(key, entry);
         ENTRIES.unshift(entry);
         added++;
       }
 
-      if(added > 0){
+      if(added > 0 || updated > 0){
         saveEntries();
         refreshBranchList();
         updateSyncBadge();
         renderEntries();
       }
 
-      statusEl.style.color = added > 0 ? 'var(--teal)' : 'var(--red)';
-      statusEl.textContent = added > 0
-        ? `Restored ${added} entr${added===1?'y':'ies'}${skipped ? ` · ${skipped} already on this device, skipped` : ''}.`
-        : `Nothing new to restore — all ${skipped} row(s) already exist on this device.`;
-      showToast(added > 0 ? `${added} entries restored` : 'Nothing new to restore');
+      statusEl.style.color = (added > 0 || updated > 0) ? 'var(--teal)' : 'var(--red)';
+      const parts = [];
+      if(added) parts.push(`${added} entr${added===1?'y':'ies'} restored`);
+      if(updated) parts.push(`${updated} updated (status/details changed)`);
+      if(skipped) parts.push(`${skipped} identical, skipped`);
+      statusEl.textContent = parts.length ? parts.join(' · ') + '.' : 'Nothing to restore — file matched what\'s already on this device.';
+      showToast((added > 0 || updated > 0) ? `${added} restored, ${updated} updated` : 'Nothing new to restore');
     }catch(err){
       statusEl.style.color = 'var(--red)';
       statusEl.textContent = 'Could not read that file — make sure it\'s a CSV exported from this app.';
@@ -3422,7 +3447,7 @@ window.addEventListener('appinstalled', ()=>{
    GitHub Pages' own CDN cache) every single time. If the fetched version
    doesn't match what's currently running, it forces a full, clean reload —
    no dependency on SW update timing at all. */
-const APP_VERSION = 'nspira-it-collector-v90';
+const APP_VERSION = 'nspira-it-collector-v91';
 let updateInProgress = false;
 
 async function checkForAppUpdate(){
